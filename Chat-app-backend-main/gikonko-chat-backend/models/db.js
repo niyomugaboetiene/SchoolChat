@@ -1,16 +1,33 @@
-import mysql from "mysql2/promise"; // here promise let you use async / await wiht mysql queries
-import dotenv from "dotenv";
-dotenv.config();
+const mysql = require("mysql2");
+const fs = require("fs");
+const path = require("path");
 
 const pool = mysql.createPool({
     host: process.env.DB_HOST,
+    port: Number(process.env.DB_PORT),
     user: process.env.DB_USER,
-    password: process.env.PASSWORD,
+    password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
-    waitForConnections: true, // when connection is full means it exceed to 20 connection is to wait until connection become available istead of fail
-    connectionLimit: 10, // maximum number of connection
-    queueLimit: 0 // helps to avoid overloading your server with too many queued requests
 
+    ssl: {
+        ca: fs.readFileSync(
+            path.join(__dirname, "certificates", "ca.pem")
+        ),
+        rejectUnauthorized: true
+    },
+
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0
 });
 
-export default pool;
+pool.getConnection((err, connection) => {
+    if (err) {
+        console.error("Database connection failed:", err.message);
+        return;
+    }
+
+    console.log("Successfully connected to Aiven MySQL Database!");
+
+    connection.release();
+});
