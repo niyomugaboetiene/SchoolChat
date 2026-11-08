@@ -1,9 +1,17 @@
-const mysql = require("mysql2");
-const fs = require("fs");
-const path = require("path");
-require("dotenv").config({
+
+import mysql from "mysql2/promise";
+import fs from "fs";
+import path from "path";
+import dotenv from "dotenv";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+dotenv.config({
     path: path.resolve(__dirname, "../.env")
 });
+
 const pool = mysql.createPool({
     host: process.env.DB_HOST,
     port: Number(process.env.DB_PORT),
@@ -13,7 +21,7 @@ const pool = mysql.createPool({
 
     ssl: {
         ca: fs.readFileSync(
-          path.join(__dirname, "../certificates/ca.pem")
+            path.join(__dirname, "../certificates/ca.pem")
         ),
         rejectUnauthorized: true
     },
@@ -23,16 +31,14 @@ const pool = mysql.createPool({
     queueLimit: 0
 });
 
-pool.getConnection((err, connection) => {
-    if (err) {
-        console.error("Database connection failed!");
-        console.error("Error code:", err.code);
-        console.error("Error message:", err.message);
-        console.error("Full error:", err);
-        return;
-    }
+try {
+    const connection = await pool.getConnection();
 
-    console.log("Successfully connected to Aiven MySQL Database!");
+    console.log("Connected to Aiven MySQL!");
 
     connection.release();
-});
+} catch (error) {
+    console.error("Failed to connect:", error.message);
+}
+
+export default pool;
