@@ -1,6 +1,7 @@
 const mysql = require("mysql2");
 const fs = require("fs");
 const path = require("path");
+require("dotenv").config();
 
 const pool = mysql.createPool({
     host: process.env.DB_HOST,
@@ -11,7 +12,7 @@ const pool = mysql.createPool({
 
     ssl: {
         ca: fs.readFileSync(
-            path.join(__dirname, "certificates", "ca.pem")
+          path.join(__dirname, "../certificates/ca.pem")
         ),
         rejectUnauthorized: true
     },
@@ -23,7 +24,10 @@ const pool = mysql.createPool({
 
 pool.getConnection((err, connection) => {
     if (err) {
-        console.error("Database connection failed:", err.message);
+        console.error("Database connection failed!");
+        console.error("Error code:", err.code);
+        console.error("Error message:", err.message);
+        console.error("Full error:", err);
         return;
     }
 
