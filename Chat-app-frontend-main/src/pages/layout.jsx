@@ -62,53 +62,40 @@ export default function Layout() {
     const { t } = useTranslation();
 
     // Fetch the current user's profile
-    useEffect(() => {
-        let active = true;
+     useEffect(() => {
+     let active = true;
 
-        const fetchProfile = async () => {
-            try {
-                const res = await api.get("/api/auth/profile");
+     const fetchProfile = async () => {
+          try {
+               const res = await api.get("/api/auth/profile");
 
-                if (!active) return;
+               if (!active) return;
 
-                setUser(res.data);
+               setUser(res.data);
 
-                if (res.data.profile_image) {
-                    setProfileImage(
-                        getProfileImageUrl(res.data.profile_image)
-                    );
-                }
+               if (res.data.profile_image) {
+                    setProfileImage(getProfileImageUrl(res.data.profile_image));
+               }
 
-                const allowedRoles = [
-                    "director",
-                    "dos",
-                    "patron",
-                    "matron",
-                    "dod"
-                ];
+               const allowedRoles = ["director", "dos", "patron", "matron", "dod"];
+               setIsAllowed(allowedRoles.includes(res.data.role));
 
-                setIsAllowed(
-                    allowedRoles.includes(res.data.role)
-                );
-
-            } catch (error) {
-                if (active) {
+          } catch (error) {
+               if (active) {
                     console.error("Profile loading failed:", error);
                     navigate("/");
-                }
-            } finally {
-                if (active) {
-                    setIsLoading(false);
-                }
-            }
-        };
+               }
+          } finally {
+               if (active) setIsLoading(false);
+          }
+     };
 
-        fetchProfile();
+     fetchProfile();
 
-        return () => {
-            active = false;
-        };
-    }, [navigate]);
+     return () => {
+          active = false;
+     };
+     }, [navigate]);
 
     // Fetch unread notification count
     useEffect(() => {
