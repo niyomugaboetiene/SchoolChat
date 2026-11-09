@@ -19,14 +19,9 @@ import {
 import api from "../api";
 import { useTranslation } from "react-i18next";
 
-// --------------------------------------------------
-// BACKEND AND SOCKET CONFIGURATION
-// --------------------------------------------------
-
 const configuredBase =
     api.defaults.baseURL ||
-    import.meta.env.VITE_API_URL ||
-    "http://localhost:4000";
+    import.meta.env.VITE_BACKEND_URL
 
 const API_ORIGIN = configuredBase.startsWith("http")
     ? configuredBase.replace(/\/api\/?$/, "")
@@ -69,10 +64,6 @@ const getInitial = (name) => {
     return name?.charAt(0)?.toUpperCase() || "?";
 };
 
-// --------------------------------------------------
-// AVATAR COMPONENT
-// --------------------------------------------------
-
 function Avatar({
     name,
     image,
@@ -106,10 +97,6 @@ function Avatar({
         </div>
     );
 }
-
-// --------------------------------------------------
-// MAIN CHAT COMPONENT
-// --------------------------------------------------
 
 export default function Chat() {
     const [myName, setMyName] = useState("");
@@ -151,10 +138,6 @@ export default function Chat() {
     const navigate = useNavigate();
     const { t } = useTranslation();
 
-    // --------------------------------------------------
-    // CURRENT USER PROFILE
-    // --------------------------------------------------
-
     useEffect(() => {
         let active = true;
 
@@ -180,10 +163,6 @@ export default function Chat() {
             active = false;
         };
     }, [navigate]);
-
-    // --------------------------------------------------
-    // LOAD USERS
-    // --------------------------------------------------
 
     useEffect(() => {
         if (!myName) return;
@@ -216,10 +195,6 @@ export default function Chat() {
         };
     }, [myName]);
 
-    // --------------------------------------------------
-    // LOAD GROUPS
-    // --------------------------------------------------
-
     useEffect(() => {
         if (!myName) return;
 
@@ -242,10 +217,6 @@ export default function Chat() {
             active = false;
         };
     }, [myName]);
-
-    // --------------------------------------------------
-    // LOAD CONVERSATION PREVIEWS
-    // --------------------------------------------------
 
     useEffect(() => {
         if (!myName) return;
@@ -278,10 +249,6 @@ export default function Chat() {
         };
     }, [myName]);
 
-    // --------------------------------------------------
-    // LOAD CURRENT USER INFORMATION
-    // --------------------------------------------------
-
     useEffect(() => {
         if (!myName) return;
 
@@ -305,10 +272,6 @@ export default function Chat() {
         };
     }, [myName]);
 
-    // --------------------------------------------------
-    // ONLINE USERS
-    // --------------------------------------------------
-
     useEffect(() => {
         if (!myName) return;
 
@@ -324,10 +287,6 @@ export default function Chat() {
             socket.off("userList", handleUserList);
         };
     }, [myName]);
-
-    // --------------------------------------------------
-    // UNREAD MESSAGE COUNTS
-    // --------------------------------------------------
 
     useEffect(() => {
         if (!userId || !allUsers.length) return;
@@ -367,10 +326,6 @@ export default function Chat() {
         };
     }, [userId, allUsers]);
 
-    // --------------------------------------------------
-    // MARK PRIVATE MESSAGES AS READ
-    // --------------------------------------------------
-
     useEffect(() => {
         if (!selectedUser || !myName) return;
 
@@ -401,10 +356,6 @@ export default function Chat() {
 
         markRead();
     }, [selectedUser, myName]);
-
-    // --------------------------------------------------
-    // LOAD PRIVATE MESSAGES
-    // --------------------------------------------------
 
     useEffect(() => {
         if (!selectedUser || !myName) return;
@@ -441,10 +392,6 @@ export default function Chat() {
         };
     }, [selectedUser, myName]);
 
-    // --------------------------------------------------
-    // LOAD GROUP MESSAGES
-    // --------------------------------------------------
-
     useEffect(() => {
         if (!selectedGroup) return;
 
@@ -480,20 +427,12 @@ export default function Chat() {
         };
     }, [selectedGroup]);
 
-    // --------------------------------------------------
-    // JOIN GROUP ROOM
-    // --------------------------------------------------
-
     useEffect(() => {
         if (!selectedGroup?.g_id) return;
 
         socket.emit("joinGroup", selectedGroup.g_id);
 
     }, [selectedGroup]);
-
-    // --------------------------------------------------
-    // PRIVATE REAL-TIME MESSAGES
-    // --------------------------------------------------
 
     useEffect(() => {
         const handlePrivateMessage = ({
@@ -511,8 +450,6 @@ export default function Chat() {
 
                 if (alreadyExists) return prev;
 
-                // Reconcile a temporary optimistic message if the
-                // sender receives their own Socket.IO event.
                 if (from === myName) {
                     const tempIndex = prev.findIndex(
                         msg => msg.isOwn && msg.pending && msg.content === content
@@ -562,10 +499,6 @@ export default function Chat() {
         };
     }, [myName, selectedUser]);
 
-    // --------------------------------------------------
-    // GROUP REAL-TIME MESSAGES
-    // --------------------------------------------------
-
     useEffect(() => {
         const handleNewGroupMessage = (msg) => {
             if (!selectedGroup || msg.g_id !== selectedGroup.g_id) return;
@@ -587,10 +520,6 @@ export default function Chat() {
             socket.off("newGroupMessage", handleNewGroupMessage);
         };
     }, [selectedGroup]);
-
-    // --------------------------------------------------
-    // DELETE MESSAGE SOCKET EVENTS
-    // --------------------------------------------------
 
     useEffect(() => {
         const handlePrivateDeleted = ({ m_id }) => {
@@ -618,20 +547,12 @@ export default function Chat() {
         };
     }, []);
 
-    // --------------------------------------------------
-    // AUTO SCROLL
-    // --------------------------------------------------
-
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({
             behavior: "smooth",
             block: "end"
         });
     }, [messages, groupMessages, isLoadingMessages]);
-
-    // --------------------------------------------------
-    // SEND PRIVATE MESSAGE
-    // --------------------------------------------------
 
     const sendMessage = async () => {
         const content = message.trim();
@@ -706,10 +627,6 @@ export default function Chat() {
         }
     };
 
-    // --------------------------------------------------
-    // SEND GROUP MESSAGE
-    // --------------------------------------------------
-
     const sendGroupChatMessage = async () => {
         const content = message.trim();
 
@@ -762,10 +679,6 @@ export default function Chat() {
         }
     };
 
-    // --------------------------------------------------
-    // DELETE PRIVATE MESSAGE
-    // --------------------------------------------------
-
     const handleDeletePrivateMessage = async (m_id) => {
         if (!window.confirm("Delete this message?")) return;
 
@@ -779,14 +692,10 @@ export default function Chat() {
             );
 
         } catch (error) {
-            console.error("Delete failed:", error);
+            // console.error("Delete failed:", error);
             alert("Unable to delete this message.");
         }
     };
-
-    // --------------------------------------------------
-    // DELETE GROUP MESSAGE
-    // --------------------------------------------------
 
     const handleDeleteGroupMessage = async (id) => {
         if (!id) return;
@@ -816,10 +725,6 @@ export default function Chat() {
         }
     };
 
-    // --------------------------------------------------
-    // LEAVE GROUP
-    // --------------------------------------------------
-
     const handleLeaveGroup = async (groupItem) => {
         if (!window.confirm(`Leave ${groupItem.group_name}?`)) return;
 
@@ -843,10 +748,6 @@ export default function Chat() {
             alert("Unable to leave the group.");
         }
     };
-
-    // --------------------------------------------------
-    // DELETE GROUP
-    // --------------------------------------------------
 
     const handleDeleteGroup = async () => {
         if (!selectedGroup) return;
@@ -875,10 +776,6 @@ export default function Chat() {
         }
     };
 
-    // --------------------------------------------------
-    // SELECT CONVERSATION
-    // --------------------------------------------------
-
     const openPrivateChat = (user) => {
         setSelectedGroup(null);
         setSelectedUser(user.name);
@@ -899,10 +796,6 @@ export default function Chat() {
         setShowMobileChat(false);
         setShowDeleteMenu(false);
     };
-
-    // --------------------------------------------------
-    // SEARCH AND FILTER
-    // --------------------------------------------------
 
     const filteredUsers = allUsers.filter(user =>
         user.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -941,10 +834,6 @@ export default function Chat() {
         ? isSelectedUserOnline(selectedUser)
         : false;
 
-    // --------------------------------------------------
-    // MESSAGE FORM SUBMIT
-    // --------------------------------------------------
-
     const handleSubmit = (e) => {
         e.preventDefault();
 
@@ -954,10 +843,6 @@ export default function Chat() {
             sendMessage();
         }
     };
-
-    // --------------------------------------------------
-    // MESSAGE SKELETON
-    // --------------------------------------------------
 
     const MessageSkeleton = () => (
         <div className="space-y-6 p-5">
@@ -981,17 +866,8 @@ export default function Chat() {
         </div>
     );
 
-    // --------------------------------------------------
-    // MAIN INTERFACE
-    // --------------------------------------------------
-
     return (
         <div className="h-[calc(100dvh-116px)] min-h-[500px] max-h-[1000px] flex bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-
-            {/* ==========================================
-                LEFT SIDEBAR
-            ========================================== */}
-
             <aside
                 className={`
                     w-full md:w-[320px] lg:w-[350px]
@@ -1001,7 +877,6 @@ export default function Chat() {
                 `}
             >
 
-                {/* Sidebar header */}
                 <div className="p-5 border-b border-slate-200">
 
                     <div className="flex justify-between items-center mb-5">
@@ -1024,7 +899,6 @@ export default function Chat() {
                         </button>
                     </div>
 
-                    {/* Current user */}
                     <div className="flex items-center gap-3 mb-5">
                         <Avatar
                             name={myName}
@@ -1044,7 +918,6 @@ export default function Chat() {
                         </div>
                     </div>
 
-                    {/* Search */}
                     <div className="relative">
                         <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm" />
 
@@ -1067,7 +940,6 @@ export default function Chat() {
                     </div>
                 </div>
 
-                {/* Conversation filters */}
                 <div className="px-4 pt-3 pb-2 flex gap-2">
                     {[
                         { id: "all", label: "All" },
@@ -1092,10 +964,8 @@ export default function Chat() {
                     ))}
                 </div>
 
-                {/* Scrollable conversation list */}
                 <div className="flex-1 overflow-y-auto">
 
-                    {/* GROUPS */}
                     {(activeTab === "all" || activeTab === "groups") && (
                         <section>
                             <div className="px-5 py-3 flex items-center justify-between bg-white sticky top-0 z-10">
@@ -1520,7 +1390,6 @@ export default function Chat() {
                                                             </div>
                                                         </div>
 
-                                                        {/* Message actions */}
                                                         {own && !deleted && (
                                                             <button
                                                                 onClick={() =>

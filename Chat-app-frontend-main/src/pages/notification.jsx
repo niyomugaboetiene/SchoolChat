@@ -13,7 +13,7 @@ import {
     FiLoader
 } from "react-icons/fi";
 
-const socket = io("http://localhost:4000", {
+const socket = io(import.meta.env.VITE_BACKEND_URL, {
     withCredentials: true
 });
 

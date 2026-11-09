@@ -28,7 +28,7 @@ import i18n from "../i18n.js";
 import { useEffect, useState } from "react";
 
 const API_ORIGIN = (
-    api.defaults.baseURL || "http://localhost:4000"
+    api.defaults.baseURL || import.meta.env.VITE_BACKEND_URL
 ).replace(/\/api\/?$/, "");
 
 const getProfileImageUrl = (image) => {
