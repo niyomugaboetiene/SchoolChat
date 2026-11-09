@@ -107,7 +107,7 @@ router.delete('/group_members/:g_id/:user_id', async (req, res) => {
 
     try {
         await db.query(
-            'DELETE FROM group_members WHERE g_id = ? AND user_id = ?',
+            'DELETE FROM `group_members` WHERE g_id = ? AND user_id = ?',
             [g_id, user_id]
         );
         res.json({ succes: true, message: 'Member removed from the group'});
@@ -122,7 +122,7 @@ router.delete('/group-messages/:id', isAuthenticated, async (req, res) => {
     const currentUserId = req.session.user.id;
 
     try {
-        const [messageRows] = await db.query('SELECT user_id, g_id FROM group_messages WHERE id = ?', [id]);
+        const [messageRows] = await db.query('SELECT user_id, g_id FROM `group_messages` WHERE id = ?', [id]);
 
         if (messageRows.length === 0) {
             return res.status(404).json({ message: 'Message not found'});
@@ -133,7 +133,7 @@ router.delete('/group-messages/:id', isAuthenticated, async (req, res) => {
 
         // check if current logged in user is member of the group
         const [memberRows] = await db.query(
-            'SELECT * FROM group_members WHERE g_id = ? AND user_id = ?',
+            'SELECT * FROM `group_members` WHERE g_id = ? AND user_id = ?',
             [groupId, currentUserId]
         );
 
@@ -144,7 +144,7 @@ router.delete('/group-messages/:id', isAuthenticated, async (req, res) => {
         return res.status(403).json({ message: 'You can only delete your message' });
     }
 
-    await db.query('UPDATE group_messages SET is_deleted = TRUE WHERE id = ?', [id]);
+    await db.query('UPDATE `group_messages` SET is_deleted = TRUE WHERE id = ?', [id]);
 
     // sends event to the connected group members that message was deleted this helps the frontend to remove message in real time of the screen
     req.app.get('io').emit('groupMessageDeleted', { id });
@@ -152,7 +152,7 @@ router.delete('/group-messages/:id', isAuthenticated, async (req, res) => {
     res.json({ message: 'Message deleted successfully' });
   
   } catch (error) {
-      console.error('Error deleting message', error);
+    //   console.error('Error deleting message', error);
       res.status(500).json({ message: 'Server error'});
     }
 
@@ -164,7 +164,7 @@ router.delete('/leave/:g_id', isAuthenticated, async (req, res) => {
 
     try {
         await db.query(
-            'UPDATE group_members SET left_at = NOW(), is_leaved = TRUE WHERE user_id = ? AND g_id = ?', [user_id, g_id]
+            'UPDATE `group_members` SET left_at = NOW(), is_leaved = TRUE WHERE user_id = ? AND g_id = ?', [user_id, g_id]
         );
         res.json({ message: 'Left group successfully'});
     } catch (error) {
@@ -179,7 +179,7 @@ router.patch('/:g_id/soft-delete', isAuthenticated, async (req, res) => {
 
     try {
         // check if the group is exist
-        const [rows] = await db.query('SELECT created_by FROM groups WHERE g_id = ? AND is_deleted = 0', [g_id]);
+        const [rows] = await db.query('SELECT `created_by` FROM groups WHERE g_id = ? AND is_deleted = 0', [g_id]);
 
         if (rows.length === 0) {
             return res.status(404).json({ error: 'Group not found or already deleted' })
@@ -190,11 +190,11 @@ router.patch('/:g_id/soft-delete', isAuthenticated, async (req, res) => {
             return res.status(403).json({ error: 'Not authorized to delete the group' });
         }
 
-        await db.query('UPDATE groups SET is_deleted = 1 WHERE g_id = ?', [g_id]);
+        await db.query('UPDATE `groups` SET is_deleted = 1 WHERE g_id = ?', [g_id]);
 
         res.json({ succes: true, message: 'Group deleted successfully' });
     } catch (error) {
-        console.error('Error in deleting soft delete', error);
+        // console.error('Error in deleting soft delete', error);
         res.status(500).json({ error: 'Internal server error' });
     }
 })
@@ -211,7 +211,7 @@ router.patch('/rename/:g_id/name', async (req, res) => {
 
     try {
         const [group] = await db.query (
-            'SELECT * FROM groups WHERE  g_id = ? AND is_deleted = 0',
+            'SELECT * FROM `groups` WHERE  g_id = ? AND is_deleted = 0',
             [g_id]
 
         );
@@ -225,14 +225,14 @@ router.patch('/rename/:g_id/name', async (req, res) => {
         }
 
         await db.query(
-            'UPDATE groups SET group_name = ? WHERE g_id = ?',
+            'UPDATE groups SET `group_name` = ? WHERE g_id = ?',
             [group_name.trim(), g_id]
         );
 
         res.json({ message: 'Group name updated successfully' });
     
     } catch (err) {
-        console.error('Error updating group name:', err);
+        // console.error('Error updating group name:', err);
         res.status(500).json({ message: 'Internal server error' });
     }
 })
@@ -267,7 +267,7 @@ router.patch('/change-group-photo/:g_id/photo', isAuthenticated, upload.single('
     const userId = req.session.user.id;
 
     try {
-        const [rows] = await db.query('SELECT * FROM groups WHERE g_id = ? AND is_deleted = 0', [g_id]);
+        const [rows] = await db.query('SELECT * FROM `groups` WHERE g_id = ? AND is_deleted = 0', [g_id]);
 
         if (!rows.length) {
             res.status(404).json({ message: 'Group not found' });
@@ -285,7 +285,7 @@ router.patch('/change-group-photo/:g_id/photo', isAuthenticated, upload.single('
 
         // save a new photo path
         const photoPath = `/uploads/group/${req.file.filename}`;
-        await db.query('UPDATE groups SET group_photo = ? WHERE g_id = ?', [photoPath, g_id]);
+        await db.query('UPDATE `groups` SET group_photo = ? WHERE g_id = ?', [photoPath, g_id]);
 
         res.json({ message: 'Group photo updated', photoPath});
     
