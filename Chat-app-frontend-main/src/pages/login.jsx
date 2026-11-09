@@ -36,18 +36,21 @@ export default function Login() {
                     password
                 });
 
-                const token =
-                    response.data.token ||
-                    response.data.accessToken ||
-                    response.data.access_token;
+            const token =
+                response.data.token ||
+                response.data.accessToken ||
+                response.data.access_token;
 
-                if (token) {
-                    localStorage.setItem("token", token);
-                }
+            if (!token) {
+                throw new Error("Login successful but no authentication token received.");
+            }
 
-                navigate("/dashboard");
+            localStorage.setItem("token", token);
+
+            navigate("/dashboard");
             } catch (err) {
                 setError(err.response?.data?.message || "Login Failed");
+                console.log(err.message);
             } finally {
                 setLoading(false);
             }
