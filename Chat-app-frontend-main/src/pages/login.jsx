@@ -31,29 +31,18 @@ export default function Login() {
             setLoading(true);
 
             try {
-                const response = await api.post("/api/auth/login", {
+                await api.post("/api/auth/login", {
                     phone,
                     password
                 });
 
-            const token =
-                response.data.token ||
-                response.data.accessToken ||
-                response.data.access_token;
+                navigate("/dashboard");
 
-            if (!token) {
-                throw new Error("Login successful but no authentication token received.");
-            }
-
-            localStorage.setItem("token", token);
-
-            navigate("/dashboard");
             } catch (err) {
                 setError(err.response?.data?.message || "Login Failed");
-                console.log(err.message);
             } finally {
                 setLoading(false);
-            }
+         }
         }
 
 
