@@ -11,24 +11,22 @@ import {
     FaEllipsisH,
     FaArrowLeft,
     FaCheck,
-    FaTimes,
-    FaSignOutAlt,
-    FaUserCircle
+    FaTimes
 } from "react-icons/fa";
-
 import api from "../api";
 import { useTranslation } from "react-i18next";
 
-const configuredBase =
+const configuredBase = String(
     api.defaults.baseURL ||
-    import.meta.env.VITE_BACKEND_URL
+    import.meta.env.VITE_BACKEND_URL ||
+    ""
+).trim();
 
-const API_ORIGIN = configuredBase.startsWith("https")
-    ? configuredBase.replace(/\/api\/?$/, "")
+const API_ORIGIN = configuredBase
+    ? new URL(configuredBase, window.location.origin).origin
     : window.location.origin;
 
-const SOCKET_URL =
-    import.meta.env.VITE_BACKEND_URL || API_ORIGIN;
+const SOCKET_URL = API_ORIGIN;
 
 const socket = io(SOCKET_URL, {
     withCredentials: true,
@@ -36,9 +34,11 @@ const socket = io(SOCKET_URL, {
 });
 
 const getImageUrl = (image, isGroup = false) => {
-    if (!image) return null;
+    if (typeof image !== "string" || !image.trim()) return null;
 
-    if (image.startsWith("https")) return image;
+    if (image.startsWith("http://") || image.startsWith("https://")) {
+        return image;
+    }
 
     if (isGroup) {
         return `${API_ORIGIN}${image.startsWith("/") ? "" : "/"}${image}`;
@@ -150,9 +150,9 @@ export default function Chat() {
                 setMyName(res.data.name);
                 setUserId(res.data.id);
                 setMyProfileImage(res.data.profile_image);
-
             } catch (error) {
                 console.error("Failed to load profile:", error);
+
                 if (active) navigate("/");
             }
         };
@@ -180,7 +180,6 @@ export default function Chat() {
                         res.data.filter(user => user.name !== myName)
                     );
                 }
-
             } catch (error) {
                 console.error("Failed to fetch users:", error);
             } finally {
@@ -205,7 +204,6 @@ export default function Chat() {
                 const res = await api.get("/api/groups/my");
 
                 if (active) setGroup(res.data);
-
             } catch (error) {
                 console.error("Failed to fetch groups:", error);
             }
@@ -236,7 +234,6 @@ export default function Chat() {
                 });
 
                 setLastMessage(map);
-
             } catch (error) {
                 console.error("Failed to load conversations:", error);
             }
@@ -259,7 +256,6 @@ export default function Chat() {
                 const res = await api.get("/api/messages/userInfo");
 
                 if (active) setUserInfo(res.data);
-
             } catch (error) {
                 console.error("Failed to load user information:", error);
             }
@@ -280,7 +276,6 @@ export default function Chat() {
         };
 
         socket.emit("login", myName);
-
         socket.on("userList", handleUserList);
 
         return () => {
@@ -310,7 +305,6 @@ export default function Chat() {
                 }
 
                 if (active) setUnreadCount(countsMap);
-
             } catch (error) {
                 console.error("Failed to fetch unread counts:", error);
             }
@@ -343,7 +337,6 @@ export default function Chat() {
                     sender: currentUser,
                     receiver: myName
                 });
-
             } catch (error) {
                 console.error("Failed to mark messages as read:", error);
 
@@ -373,7 +366,6 @@ export default function Chat() {
                 );
 
                 if (active) setMessages(res.data);
-
             } catch (error) {
                 console.error("Failed to fetch private messages:", error);
 
@@ -408,7 +400,6 @@ export default function Chat() {
                 );
 
                 if (active) setGroupMessages(res.data);
-
             } catch (error) {
                 console.error("Failed to fetch group messages:", error);
 
@@ -431,7 +422,6 @@ export default function Chat() {
         if (!selectedGroup?.g_id) return;
 
         socket.emit("joinGroup", selectedGroup.g_id);
-
     }, [selectedGroup]);
 
     useEffect(() => {
@@ -612,7 +602,6 @@ export default function Chat() {
                 m_id: savedMessage.m_id,
                 timestamp: savedMessage.created_at
             });
-
         } catch (error) {
             setMessages(prev =>
                 prev.filter(msg => msg.m_id !== tempId)
@@ -620,7 +609,6 @@ export default function Chat() {
 
             console.error("Failed to send private message:", error);
             setErrorMessage("Message could not be sent. Please try again.");
-
         } finally {
             setIsSending(false);
             messageInputRef.current?.focus();
@@ -667,12 +655,10 @@ export default function Chat() {
             socket.emit("groupMessage", {
                 ...savedGroupMessage
             });
-
         } catch (error) {
             console.error("Failed to send group message:", error);
             setMessage(content);
             setErrorMessage("Message could not be sent. Please try again.");
-
         } finally {
             setIsSending(false);
             messageInputRef.current?.focus();
@@ -690,9 +676,7 @@ export default function Chat() {
             setMessages(prev =>
                 prev.filter(msg => String(msg.m_id) !== String(m_id))
             );
-
         } catch (error) {
-            // console.error("Delete failed:", error);
             alert("Unable to delete this message.");
         }
     };
@@ -714,7 +698,6 @@ export default function Chat() {
                         : msg
                 )
             );
-
         } catch (error) {
             console.error("Failed to delete group message:", error);
 
@@ -742,7 +725,6 @@ export default function Chat() {
             }
 
             setShowDeleteMenuForGroup(null);
-
         } catch (error) {
             console.error("Failed to leave group:", error);
             alert("Unable to leave the group.");
@@ -769,7 +751,6 @@ export default function Chat() {
             setGroupMessages([]);
             setShowDeleteMenu(false);
             setShowMobileChat(false);
-
         } catch (error) {
             console.error("Failed to delete group:", error);
             alert("Failed to delete group.");
@@ -798,11 +779,11 @@ export default function Chat() {
     };
 
     const filteredUsers = allUsers.filter(user =>
-        user.name.toLowerCase().includes(searchTerm.toLowerCase())
+        user.name?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     const filteredGroups = group.filter(groupItem =>
-        groupItem.group_name.toLowerCase().includes(searchTerm.toLowerCase())
+        groupItem.group_name?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     const isSelectedUserOnline = (name) => {
@@ -876,9 +857,7 @@ export default function Chat() {
                     ${showMobileChat ? "hidden md:flex" : "flex"}
                 `}
             >
-
                 <div className="p-5 border-b border-slate-200">
-
                     <div className="flex justify-between items-center mb-5">
                         <div>
                             <h1 className="text-xl font-bold text-slate-900">
@@ -965,7 +944,6 @@ export default function Chat() {
                 </div>
 
                 <div className="flex-1 overflow-y-auto">
-
                     {(activeTab === "all" || activeTab === "groups") && (
                         <section>
                             <div className="px-5 py-3 flex items-center justify-between bg-white sticky top-0 z-10">
@@ -1161,7 +1139,6 @@ export default function Chat() {
                             )}
                         </section>
                     )}
-
                 </div>
 
                 <div className="px-5 py-3 border-t border-slate-200 bg-white">
@@ -1175,13 +1152,10 @@ export default function Chat() {
                 flex-1 min-w-0 flex flex-col bg-white
                 ${showMobileChat ? "flex" : "hidden md:flex"}
             `}>
-
                 {selectedUser || selectedGroup ? (
                     <>
                         <header className="h-[76px] shrink-0 px-4 sm:px-6 flex items-center justify-between border-b border-slate-200 bg-white">
-
                             <div className="flex items-center gap-3 min-w-0">
-
                                 <button
                                     onClick={goBackToConversations}
                                     className="md:hidden p-2 -ml-2 text-slate-500 hover:bg-slate-100 rounded-lg"
@@ -1222,7 +1196,6 @@ export default function Chat() {
                             </div>
 
                             <div className="flex items-center gap-2">
-
                                 {selectedGroup && (
                                     <>
                                         <button
@@ -1250,7 +1223,6 @@ export default function Chat() {
 
                                                 {showDeleteMenu && (
                                                     <div className="absolute right-0 top-full mt-2 w-52 bg-white border border-slate-200 rounded-lg shadow-lg p-2 z-30">
-
                                                         <button
                                                             onClick={() => {
                                                                 setShowDeleteMenu(false);
@@ -1295,7 +1267,6 @@ export default function Chat() {
                             className="flex-1 overflow-y-auto bg-slate-50/70 px-3 sm:px-6 py-6"
                         >
                             <div className="max-w-4xl mx-auto">
-
                                 {isLoadingMessages ? (
                                     <MessageSkeleton />
                                 ) : errorMessage ? (
@@ -1320,7 +1291,6 @@ export default function Chat() {
                                     </div>
                                 ) : (
                                     <div className="space-y-5">
-
                                         {currentMessages.map((msg, index) => {
                                             const own =
                                                 msg.sender_name === myName ||
@@ -1345,7 +1315,6 @@ export default function Chat() {
                                                     <div className={`group relative max-w-[85%] sm:max-w-[75%] lg:max-w-[65%] ${
                                                         own ? "items-end" : "items-start"
                                                     }`}>
-
                                                         {!own && selectedGroup && (
                                                             <p className="text-[11px] font-semibold text-slate-500 mb-1 ml-2">
                                                                 {msg.sender_name}
@@ -1360,7 +1329,6 @@ export default function Chat() {
                                                                     : "bg-white text-slate-800 border border-slate-200 rounded-bl-md"
                                                             }
                                                         `}>
-
                                                             <p className={`text-sm leading-6 whitespace-pre-wrap break-words ${
                                                                 deleted
                                                                     ? "italic opacity-70"
@@ -1423,7 +1391,6 @@ export default function Chat() {
                         )}
 
                         <footer className="shrink-0 bg-white border-t border-slate-200 p-3 sm:p-4">
-
                             <form
                                 onSubmit={handleSubmit}
                                 className="max-w-4xl mx-auto flex items-end gap-3"
@@ -1470,9 +1437,7 @@ export default function Chat() {
                         </footer>
                     </>
                 ) : (
-
                     <div className="flex-1 flex flex-col items-center justify-center bg-white px-6 text-center">
-
                         <div className="w-20 h-20 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-center mb-6">
                             <FaComments className="text-3xl text-slate-400" />
                         </div>
@@ -1492,10 +1457,8 @@ export default function Chat() {
                             <FaPlus />
                             {t("create_group")}
                         </button>
-
                     </div>
                 )}
-
             </main>
         </div>
     );
