@@ -62,7 +62,7 @@ export default function About() {
         <div className="mx-auto w-full max-w-sm">
           <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
             <img
-              src="/etiene.jpg"
+              src={Image}
               alt="NIYOMUGABO Etiene"
               className="aspect-[4/5] w-full rounded-xl object-cover"
             />
