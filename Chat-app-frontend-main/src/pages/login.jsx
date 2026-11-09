@@ -25,25 +25,25 @@ export default function Login() {
     const { t } = useTranslation();
 
 
-        async function handleSubmit(e) {
-            e.preventDefault();
-            setError(null);
-            setLoading(true);
+    async function handleSubmit(e) {
+        e.preventDefault();
+        setError(null);
+        setLoading(true);
 
-            try {
-                await api.post("/api/auth/login", {
-                    phone,
-                    password
-                });
+        try {
+            await api.post("/api/auth/login", {
+                phone,
+                password
+            }, { withCredentials: true });
 
-                navigate("/dashboard");
+            navigate("/dashboard");
 
-            } catch (err) {
-                setError(err.response?.data?.message || "Login Failed");
-            } finally {
-                setLoading(false);
-         }
+        } catch (err) {
+            setError(err.response?.data?.message || "Login Failed");
+        } finally {
+            setLoading(false);
         }
+    }
 
 
     return (
