@@ -1,289 +1,659 @@
-import { Outlet, Link, useNavigate, useLocation } from "react-router-dom";
-import  { FaHome, FaEnvelope, FaBell, FaUserCircle } from "react-icons/fa";
+
+import {
+    Outlet,
+    Link,
+    useNavigate,
+    useLocation
+} from "react-router-dom";
+
+import {
+    FaHome,
+    FaEnvelope,
+    FaBell,
+    FaUserCircle,
+    FaCamera,
+    FaSignOutAlt,
+    FaUserPlus,
+    FaChevronDown,
+    FaBars,
+    FaTimes,
+    FaGlobe
+} from "react-icons/fa";
+
 import api from "../api";
 import { useTranslation } from "react-i18next";
 import i18n from "../i18n.js";
+
 import { useEffect, useState } from "react";
 
+const API_ORIGIN = (
+    api.defaults.baseURL || "http://localhost:4000"
+).replace(/\/api\/?$/, "");
 
-export default function Layout () {
+const getProfileImageUrl = (image) => {
+    if (!image) return null;
 
-    // .filter() creates new array that contains only element that pass through the test or meet with specified condition
-        const [showUserMenu, setShowUserMenu] = useState(false);
-        const [profileImage, setProfileImage] = useState(null);
-        const [selectedFile, setSelectedFile] = useState(null);
-        const [isAllowed, setIsAllowed] = useState(false);
+    if (image.startsWith("http")) return image;
 
-        //handling badges
-        const [unreadMessages, setUnreadMessages] = useState(0);
-        const [unreadNotifications, setUnreadNotifications] = useState(0);
-        const [user, setUser] = useState(null);
+    return `${API_ORIGIN}/uploads/${image}`;
+};
 
-        const navigate = useNavigate();
-        const location = useLocation();
-        const  { t } = useTranslation();
+export default function Layout() {
+    const [showUserMenu, setShowUserMenu] = useState(false);
+    const [showMobileMenu, setShowMobileMenu] = useState(false);
 
-        //fetch unread notification count 
-        useEffect(() => {
-            if (!user || !user.id) return;
+    const [profileImage, setProfileImage] = useState(null);
+    const [selectedFile, setSelectedFile] = useState(null);
 
-           const fetchUnreadNotification = async () => {
-              try {
-                  const notifRes = await api.get(`/api/notifications/unread-count`);
-                  setUnreadNotifications(notifRes.data.unread_count);
+    const [isAllowed, setIsAllowed] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isUploading, setIsUploading] = useState(false);
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-           } catch (error) {
-                  console.error('Error fetching unread count');
-          }
+    const [unreadMessages, setUnreadMessages] = useState(0);
+    const [unreadNotifications, setUnreadNotifications] = useState(0);
 
-        }
-        fetchUnreadNotification();
-        
-         const interval = setInterval(() => {
-                fetchUnreadNotification();
-            }, 5000);
+    const [user, setUser] = useState(null);
 
-            return () => clearInterval(interval);
+    const navigate = useNavigate();
+    const location = useLocation();
 
+    const { t } = useTranslation();
 
-        }, [user]);
-       
-     // fetch user profile first   
+    // Fetch the current user's profile
     useEffect(() => {
-        api.get("/api/auth/profile")
-        .then((res) => {
-            console.log("Profile", res.data);
-            setUser(res.data);
+        let active = true;
 
-            if (res.data.profile_image) {
-                setProfileImage(`http://localhost:4000/uploads/${res.data.profile_image}`)
-            }
-
-        }).catch(() => {
-            navigate("/");
-        })
-       }, []);
-
-       // fetch unread counts after user is set
-        useEffect(() => {
-   
-            if (!user || !user.id) return;
-
-            const fetchUnreadCountsForMessages = async () => {
-                try {
-                      //fetchUnreadMessages
-                    const unreadRes = await api.get(`/api/messages/unread`);
-
-                    // here loops through each message and sums up their unread_count values starting from 0
-                    // is methood that loops through the array and sums up the values
-                    // it start from zero, msg is each item in the array(each message object)
-                    // sum + unread_message it keeps adding unread message to the total like this sum = 0 + 3 + 4, ...
-                    const totalUnreadMessages = unreadRes.data.reduce((sum, msg) => sum + msg.unread_count, 0);
-                    setUnreadMessages(totalUnreadMessages);
-                    
-                } catch (error) {
-                    console.error('Error fetching unread counts', error);
-                }
-            };
-
-              fetchUnreadCountsForMessages(); // fetch immediately
-
-             const interval = setInterval(() => {
-                fetchUnreadCountsForMessages(); // fetch unread counts every seconds
-             }, 1000);
-
-            return () => clearInterval(interval) // cleanup interval
-        }, [user]);
-        
-
-        // function that takes an event object like input
-        const handleFileChange = (e) => {
-            // checks if event has file or if file is selected
-            if (e.target.files && e.target.files[0]) {
-                //created a temporary local URL for selected file to preview image immediately
-                setProfileImage(URL.createObjectURL(e.target.files[0]));
-                setSelectedFile(e.target.files[0]);
-            }
-        }
-
-        const handleProfilePhotoChange = async (e) => {
-            e.preventDefault();
-
-            if (!selectedFile) {
-                 alert("Please select an image");
-                 return;
-            };
-
-            // create formData to be used to send files and other data over http requests
-            const formData = new FormData();
-            // adds selected file to the formData with their key profile_image(name server uses to identify file)
-            // selectedFile is actual file
-            formData.append("profile_image", selectedFile);
-
+        const fetchProfile = async () => {
             try {
-                 const response = await api.post("/api/users/change-profile-photo", formData,{
-                    headers: { 'Content-Type': 'multipart/form-data'}
-                 }, { withCredentials: true},
+                const res = await api.get("/api/auth/profile");
+
+                if (!active) return;
+
+                setUser(res.data);
+
+                if (res.data.profile_image) {
+                    setProfileImage(
+                        getProfileImageUrl(res.data.profile_image)
+                    );
+                }
+
+                const allowedRoles = [
+                    "director",
+                    "dos",
+                    "patron",
+                    "matron",
+                    "dod"
+                ];
+
+                setIsAllowed(
+                    allowedRoles.includes(res.data.role)
                 );
 
-                if (response.data.profile_image) {
-                    setProfileImage(`http://localhost:4000/uploads/${response.data.profile_image}`);
-                }
-                   setSelectedFile(null);
-                   setShowUserMenu(false);
-                  alert("Photo changed successfully");
             } catch (error) {
-                console.error(error);
-                alert("Upload failed" + (error.response?.data?.error));
+                if (active) {
+                    console.error("Profile loading failed:", error);
+                    navigate("/");
+                }
+            } finally {
+                if (active) {
+                    setIsLoading(false);
+                }
             }
-        }
+        };
 
-        const handleLogout = async () => {
+        fetchProfile();
+
+        return () => {
+            active = false;
+        };
+    }, [navigate]);
+
+    // Fetch unread notification count
+    useEffect(() => {
+        if (!user) return;
+
+        let active = true;
+
+        const fetchUnreadNotifications = async () => {
             try {
-                await api.post("/api/auth/logout");
-                navigate("/");
-            } catch {
-                alert("logout failed");
+                const response = await api.get(
+                    "/api/notifications/unread-count"
+                );
+
+                if (active) {
+                    setUnreadNotifications(
+                        response.data.unread_count || 0
+                    );
+                }
+            } catch (error) {
+                console.error(
+                    "Error fetching unread notifications:",
+                    error
+                );
             }
+        };
+
+        fetchUnreadNotifications();
+
+        const interval = setInterval(
+            fetchUnreadNotifications,
+            15000
+        );
+
+        return () => {
+            active = false;
+            clearInterval(interval);
+        };
+    }, [user]);
+
+    // Fetch unread message count
+    useEffect(() => {
+        if (!user) return;
+
+        let active = true;
+
+        const fetchUnreadMessages = async () => {
+            try {
+                const response = await api.get("/api/messages/unread");
+
+                const totalUnread = response.data.reduce(
+                    (sum, message) =>
+                        sum + Number(message.unread_count || 0),
+                    0
+                );
+
+                if (active) {
+                    setUnreadMessages(totalUnread);
+                }
+            } catch (error) {
+                console.error(
+                    "Error fetching unread messages:",
+                    error
+                );
+            }
+        };
+
+        fetchUnreadMessages();
+
+        const interval = setInterval(
+            fetchUnreadMessages,
+            5000
+        );
+
+        return () => {
+            active = false;
+            clearInterval(interval);
+        };
+    }, [user]);
+
+    // Reset message badge when opening the chat page
+    useEffect(() => {
+        if (location.pathname === "/chat") {
+            setUnreadMessages(0);
         }
-       useEffect(() => {
-          if (user && user.role) {
-             const Allowed = ['director', 'dos', 'patron', 'matron', 'dod'];
-             setIsAllowed(Allowed.includes(user.role));
-           }
-       }, [user]);
 
-        // reset badge count when user click on visit the page
-        useEffect(() => {
-            if (location.pathname === '/chat') setUnreadMessages(0);
-            // if (location.pathname === '/notifications') setUnreadNotifications(0);
-        }, [location.pathname]);
+        setShowUserMenu(false);
+        setShowMobileMenu(false);
+    }, [location.pathname]);
 
+    // Clean up temporary profile preview URLs
+    useEffect(() => {
+        return () => {
+            if (profileImage?.startsWith("blob:")) {
+                URL.revokeObjectURL(profileImage);
+            }
+        };
+    }, [profileImage]);
 
-        if (!user) return null;
-        
+    // Handle selected profile photo
+    const handleFileChange = (e) => {
+        const file = e.target.files?.[0];
+
+        if (!file) return;
+
+        if (!file.type.startsWith("image/")) {
+            alert("Please select a valid image.");
+            return;
+        }
+
+        if (file.size > 5 * 1024 * 1024) {
+            alert("Image size must not exceed 5MB.");
+            return;
+        }
+
+        const previewUrl = URL.createObjectURL(file);
+
+        setProfileImage((previous) => {
+            if (previous?.startsWith("blob:")) {
+                URL.revokeObjectURL(previous);
+            }
+
+            return previewUrl;
+        });
+
+        setSelectedFile(file);
+    };
+
+    const handleProfilePhotoChange = async (e) => {
+        e.preventDefault();
+
+        if (!selectedFile) {
+            alert("Please select an image first.");
+            return;
+        }
+
+        const formData = new FormData();
+
+        formData.append("profile_image", selectedFile);
+
+        setIsUploading(true);
+
+        try {
+            const response = await api.post(
+                "/api/users/change-profile-photo",
+                formData,
+                {
+                    withCredentials: true
+                }
+            );
+
+            if (response.data.profile_image) {
+                setProfileImage(
+                    getProfileImageUrl(response.data.profile_image)
+                );
+            }
+
+            setSelectedFile(null);
+            setShowUserMenu(false);
+
+            alert("Profile photo updated successfully.");
+
+        } catch (error) {
+            console.error("Profile photo upload failed:", error);
+
+            alert(
+                error.response?.data?.error ||
+                "Unable to upload your profile photo."
+            );
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
+    const handleLogout = async () => {
+        setIsLoggingOut(true);
+
+        try {
+            await api.post("/api/auth/logout");
+
+            navigate("/");
+
+        } catch (error) {
+            console.error("Logout failed:", error);
+            alert("Unable to log out. Please try again.");
+        } finally {
+            setIsLoggingOut(false);
+        }
+    };
+
+    const navigationLinks = [
+        {
+            name: t("Home"),
+            path: "/dashboard",
+            icon: <FaHome />
+        },
+        {
+            name: t("Messages"),
+            path: "/chat",
+            icon: <FaEnvelope />,
+            count: unreadMessages
+        },
+        {
+            name: t("Notification"),
+            path: "/notifications",
+            icon: <FaBell />,
+            count: unreadNotifications
+        }
+    ];
+
+    if (isLoading) {
+        return (
+            <div className="min-h-screen bg-slate-50">
+                <header className="h-[68px] bg-white border-b border-slate-200 flex items-center px-6">
+                    <div className="h-7 w-36 bg-slate-200 rounded animate-pulse" />
+                </header>
+
+                <main className="max-w-7xl mx-auto px-6 py-10">
+                    <div className="h-8 w-48 bg-slate-200 rounded animate-pulse mb-8" />
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                        {[1, 2, 3].map((item) => (
+                            <div
+                                key={item}
+                                className="bg-white border border-slate-200 rounded-xl p-6"
+                            >
+                                <div className="h-10 w-10 bg-slate-200 rounded-full animate-pulse mb-5" />
+                                <div className="h-4 w-3/4 bg-slate-200 rounded animate-pulse mb-3" />
+                                <div className="h-3 w-1/2 bg-slate-100 rounded animate-pulse" />
+                            </div>
+                        ))}
+                    </div>
+                </main>
+            </div>
+        );
+    }
+
+    if (!user) return null;
+
     return (
-          <div>
-               <div className="fixed top-0 left-0 right-0 z-50">
-                    <nav className="flex justify-between items-center relative bg-gradient-to-l from-blue-500 to-blue-300 via-purple-500 text-white px-6 py-3 shadow">
-                         <div className="flex gap-6 items-center">
-                              <Link to="/dashboard" className="flex items-center gap-2">
-                                   <span className="text-lg font-bold tracking-wide text-white hidden sm:inline">School Chat</span>
-                              </Link>
-                              
-                              <div className="flex items-center gap-8 justify-center absolute right-72 left-0">
-                                   <Link className="flex items-center gap-1 text-lg hover:text-gray-200 text-pretty transition-colors" to="/dashboard">
-                                        <FaHome/> {t('Home')}
-                                   </Link>
-                                   <Link className="relative flex items-center gap-1 text-lg hover:text-gray-200 text-pretty transition-colors" to="/chat">
-                                        <FaEnvelope /> {t('Messages')}
-                                        {unreadMessages > 0 && (
-                                             <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs font-bold px-1.5 py-0.5 rounded-full">
-                                                  {unreadMessages}
-                                             </span>
-                                        )}
-                                   </Link>
+        <div className="min-h-screen bg-slate-50 text-slate-800">
 
-                                   <Link className="relative flex text-lg items-center gap-1 hover:text-gray-200 text-pretty transition-colors" to="/notifications">
-                                        <FaBell/> {t('Notification')}
-                                        {unreadNotifications > 0 && (
-                                             <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs font-bold px-1.5 py-0.5 rounded-full">
-                                                  {unreadNotifications}
-                                             </span>
-                                        )}
-                                   </Link>
-                              </div>
-                         </div>
-               <div className="absolute right-24 p-1 rounded-full flex items-center gap-2">
-                 <span className="text-white text-xl ">🌍</span>
+            <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-slate-200">
 
-                 <div className="border border-blue-300 p-1 rounded-full">
-                    <select
-                       className="bg-blue-500 text-white outline-none"
-                       onChange={(e) => i18n.changeLanguage(e.target.value)}
-                     >
-                         <option disabled>Select language</option>
+                <nav className="max-w-[1600px] mx-auto h-[68px] px-4 sm:px-6 lg:px-8 flex items-center justify-between">
 
-                         <option value="en">🇬🇧 English</option>
-                         <option value="rw">🇷🇼 Kinyarwanda</option>
-                     </select>
-                 </div>
-               </div>
-               
-               <button className="relative group bg-white text-blue-500 p-1 rounded-full
-                                             font-semibold flex items-center justify-center hover:ring-2 hover:ring-blue-400 transition-all duration-200"
-                                   onClick={() => setShowUserMenu(!showUserMenu)}
-                         >
-                              {profileImage ? (
-                                   <img src={profileImage} 
-                                        alt="Profile"
-                                        className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-md"
-                                   />
-                              ) : (
-                                   <FaUserCircle className="text-3xl mb-1"/>
-                              )}
-                         </button>
-                    </nav>
+                    <Link
+                        to="/dashboard"
+                        className="flex items-center gap-3 shrink-0"
+                    >
+                        <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-sm">
+                            <FaEnvelope className="text-lg" />
+                        </div>
 
-                    {showUserMenu && (
-                         <div className="absolute top-16 right-2 bg-white border border-gray-200 rounded-lg shadow-xl p-5 w-72 z-50">
-                              <div className="mt-2">
-                                   <h3 className="font-bold text-gray-800 text-lg mb-2">{user.name}</h3>
-                             
-                                   <p className="text-gray-700 mb-1"><span className="font-semibold text-gray-800">Phone: </span>{user.phone}</p>
-                                   <p className="text-gray-700"><span className="font-semibold text-gray-800">Role: </span>{user.role}</p>
-                              </div>
-                              <form onSubmit={handleProfilePhotoChange} className="mt-4">
-                                   <label className="block text-sm mb-2 font-medium text-gray-700 ">Change Profile photo</label>
-                                   <input type="file"
-                                        accept="image/*"
-                                        onChange={handleFileChange}
-                                        className="block w-full text-sm text-gray-600
-                                                   file:mr-4 file:py-2 file:px:4
-                                                   file:rounded-md file:border-0
-                                                   file:text-sm file:font-semibold
-                                                   file:bg-gray-100 file:text-gray-700
-                                                   file:hover:bg-gray-200 cursor-pointer mb-4"
-                                   />
+                        <div className="hidden sm:block">
+                            <h1 className="text-lg font-bold tracking-tight text-slate-900">
+                                School Chat
+                            </h1>
+                            <p className="text-[11px] text-slate-500 -mt-0.5">
+                                Stay connected
+                            </p>
+                        </div>
+                    </Link>
 
-                                   <div className="space-y-3">
-     
-                                        <div className="flex space-x-4">
-                                        <button
-                                             type="button"
-                                             onClick={handleLogout}
-                                             className="w-full bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors
-                                                         duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 text-sm font-semibold"
-                                        >
-                                             Logout
-                                        </button>
-                                    <button type="submit" 
-                                             className="w-full from-blue-500 to-blue-300 via-purple-500 hover:scale-105  bg-gradient-to-tl text-white px-4 py-2 rounded-md
-                                                         transition duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 text-sm font-semibold"
-                                        >
-                                             Upload
-                                        </button>
-                                        </div>
- 
-                                    {isAllowed && (
-                                       <button
-                                             type="button"
-                                             onClick={() => navigate('/register')}
-                                             className="w-full from-blue-500 to-blue-300 via-purple-500 hover:scale-105  bg-gradient-to-tl text-white px-4 py-2 rounded-md transition duration-200
-                                                        focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 text-sm font-semibold"
-                                        >
-                                             Create Parent Account
-                                        </button>  
+                    <div className="hidden md:flex items-center gap-1">
+
+                        {navigationLinks.map((item) => {
+                            const active =
+                                location.pathname === item.path;
+
+                            return (
+                                <Link
+                                    key={item.path}
+                                    to={item.path}
+                                    className={`
+                                        relative flex items-center gap-2
+                                        px-4 py-2.5 rounded-lg
+                                        text-sm font-medium
+                                        transition-colors duration-200
+                                        ${
+                                            active
+                                                ? "bg-blue-50 text-blue-700"
+                                                : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                                        }
+                                    `}
+                                >
+                                    <span className="text-base">
+                                        {item.icon}
+                                    </span>
+
+                                    {item.name}
+
+                                    {item.count > 0 && (
+                                        <span className="ml-1 min-w-5 h-5 px-1.5 flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold">
+                                            {item.count > 99
+                                                ? "99+"
+                                                : item.count}
+                                        </span>
                                     )}
-                                   </div>
-                              </form>
-                         </div>
-                    )}
-               </div>
+                                </Link>
+                            );
+                        })}
 
-               <div className="pt-36">
-                    <Outlet/>
-               </div>
-          </div>
-    )
+                    </div>
+
+                    <div className="flex items-center gap-3 sm:gap-5">
+
+                        <div className="hidden sm:flex items-center gap-2 text-slate-500">
+                            <FaGlobe className="text-sm" />
+
+                            <select
+                                value={i18n.language?.startsWith("rw") ? "rw" : "en"}
+                                onChange={(e) =>
+                                    i18n.changeLanguage(e.target.value)
+                                }
+                                className="bg-transparent text-sm font-medium text-slate-700 outline-none cursor-pointer"
+                                aria-label="Select language"
+                            >
+                                <option value="en">English</option>
+                                <option value="rw">Kinyarwanda</option>
+                            </select>
+                        </div>
+
+                        <div className="h-7 w-px bg-slate-200 hidden sm:block" />
+
+                        <button
+                            type="button"
+                            onClick={() => setShowUserMenu(!showUserMenu)}
+                            className="flex items-center gap-2 p-1.5 pr-2 rounded-full hover:bg-slate-100 transition-colors"
+                            aria-label="Open profile menu"
+                            aria-expanded={showUserMenu}
+                        >
+                            {profileImage ? (
+                                <img
+                                    src={profileImage}
+                                    alt="Profile"
+                                    className="w-9 h-9 rounded-full object-cover border border-slate-200"
+                                />
+                            ) : (
+                                <FaUserCircle className="text-3xl text-slate-400" />
+                            )}
+
+                            <span className="hidden lg:block text-sm font-semibold text-slate-700 max-w-28 truncate">
+                                {user.name}
+                            </span>
+
+                            <FaChevronDown className="hidden sm:block text-[10px] text-slate-400" />
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={() => setShowMobileMenu(!showMobileMenu)}
+                            className="md:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-lg"
+                            aria-label="Toggle navigation"
+                        >
+                            {showMobileMenu ? (
+                                <FaTimes />
+                            ) : (
+                                <FaBars />
+                            )}
+                        </button>
+
+                    </div>
+                </nav>
+
+                {showMobileMenu && (
+                    <div className="md:hidden bg-white border-t border-slate-200 px-4 py-3 space-y-1">
+
+                        {navigationLinks.map((item) => {
+                            const active =
+                                location.pathname === item.path;
+
+                            return (
+                                <Link
+                                    key={item.path}
+                                    to={item.path}
+                                    className={`
+                                        flex items-center justify-between
+                                        px-4 py-3 rounded-lg text-sm font-medium
+                                        ${
+                                            active
+                                                ? "bg-blue-50 text-blue-700"
+                                                : "text-slate-600 hover:bg-slate-50"
+                                        }
+                                    `}
+                                >
+                                    <span className="flex items-center gap-3">
+                                        {item.icon}
+                                        {item.name}
+                                    </span>
+
+                                    {item.count > 0 && (
+                                        <span className="bg-red-500 text-white text-xs rounded-full px-2 py-0.5">
+                                            {item.count > 99 ? "99+" : item.count}
+                                        </span>
+                                    )}
+                                </Link>
+                            );
+                        })}
+
+                        <div className="px-4 py-3 flex items-center gap-3 text-sm text-slate-600">
+                            <FaGlobe />
+
+                            <select
+                                value={i18n.language?.startsWith("rw") ? "rw" : "en"}
+                                onChange={(e) =>
+                                    i18n.changeLanguage(e.target.value)
+                                }
+                                className="bg-transparent outline-none"
+                            >
+                                <option value="en">English</option>
+                                <option value="rw">Kinyarwanda</option>
+                            </select>
+                        </div>
+                    </div>
+                )}
+
+                {showUserMenu && (
+                    <>
+                        <div
+                            className="fixed inset-0 z-40"
+                            onClick={() => setShowUserMenu(false)}
+                        />
+
+                        <div className="absolute right-4 sm:right-8 top-[60px] z-50 w-[min(340px,calc(100vw-32px))] bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden">
+
+                            <div className="p-5 bg-slate-50 border-b border-slate-200">
+
+                                <div className="flex items-center gap-3">
+                                    {profileImage ? (
+                                        <img
+                                            src={profileImage}
+                                            alt="Profile"
+                                            className="w-12 h-12 rounded-full object-cover border border-slate-200"
+                                        />
+                                    ) : (
+                                        <FaUserCircle className="text-4xl text-slate-400" />
+                                    )}
+
+                                    <div className="min-w-0">
+                                        <h3 className="font-semibold text-slate-900 truncate">
+                                            {user.name}
+                                        </h3>
+
+                                        <p className="text-sm text-slate-500 truncate">
+                                            {user.phone}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="mt-4 flex items-center justify-between text-xs">
+                                    <span className="text-slate-500">
+                                        Account role
+                                    </span>
+
+                                    <span className="bg-blue-100 text-blue-700 px-2.5 py-1 rounded-md font-semibold capitalize">
+                                        {user.role}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div className="p-4">
+
+                                <form onSubmit={handleProfilePhotoChange}>
+
+                                    <label className="block text-sm font-semibold text-slate-700 mb-2">
+                                        Profile photo
+                                    </label>
+
+                                    <label className="flex items-center gap-3 border border-dashed border-slate-300 rounded-lg p-3 cursor-pointer hover:border-blue-400 hover:bg-blue-50/50 transition-colors">
+
+                                        <div className="w-9 h-9 bg-slate-100 rounded-lg flex items-center justify-center text-slate-500">
+                                            <FaCamera />
+                                        </div>
+
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-medium text-slate-700">
+                                                Choose a new photo
+                                            </p>
+                                            <p className="text-xs text-slate-400">
+                                                JPG, PNG · Maximum 5MB
+                                            </p>
+                                        </div>
+
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={handleFileChange}
+                                            className="hidden"
+                                        />
+                                    </label>
+
+                                    {selectedFile && (
+                                        <button
+                                            type="submit"
+                                            disabled={isUploading}
+                                            className="mt-3 w-full bg-blue-600 text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                                        >
+                                            {isUploading
+                                                ? "Uploading photo..."
+                                                : "Save new photo"}
+                                        </button>
+                                    )}
+                                </form>
+
+                                {isAllowed && (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setShowUserMenu(false);
+                                            navigate("/register");
+                                        }}
+                                        className="w-full mt-4 flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
+                                    >
+                                        <FaUserPlus className="text-slate-500" />
+                                        Create Parent Account
+                                    </button>
+                                )}
+
+                                <div className="border-t border-slate-100 mt-3 pt-3">
+                                    <button
+                                        type="button"
+                                        onClick={handleLogout}
+                                        disabled={isLoggingOut}
+                                        className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-60"
+                                    >
+                                        <FaSignOutAlt />
+
+                                        {isLoggingOut
+                                            ? "Signing out..."
+                                            : "Sign out"}
+                                    </button>
+                                </div>
+
+                            </div>
+                        </div>
+                    </>
+                )}
+
+            </header>
+
+            <main className="pt-[68px] min-h-screen">
+                <div className="px-4 sm:px-6 lg:px-8 py-6">
+                    <Outlet />
+                </div>
+            </main>
+
+        </div>
+    );
 }
