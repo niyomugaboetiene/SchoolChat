@@ -1,7 +1,7 @@
 # SchoolChat – A Platform for Student Communication
 
 <p align="center">
-  <img src="screenshots/appImage.png" alt="SchoolChat Application Overview" width="850"/>
+  <img src="screenshots/dashboard.png" alt="SchoolChat Application Overview" width="850"/>
 </p>
 
 <p align="center">
