@@ -24,7 +24,7 @@ router.get('/', async (req, res) => {
 
         res.json(rows);
     } catch (err) {
-        console.error(err);
+        // console.error(err);
         res.status(500).json('Error fetching notifications');
     }
 })
@@ -37,7 +37,7 @@ router.post('/mark-read', async (req, res) => {
         const userId = req.session.user.id;
         if (!userId) return res.status(401).json({ error: 'Unauthorized' });
         await pool.query (
-            'UPDATE notifications SET is_read = 1 WHERE receiver_id = ?',
+            'UPDATE `notifications` SET is_read = 1 WHERE receiver_id = ?',
             [userId]
         );
 
@@ -91,7 +91,7 @@ router.post('/:id/action', async (req, res) => {
         });
 
     } catch (error) {
-        console.error(error);
+        // console.error(error);
         res.status(500).json('Error processing notification');
     }
 });
@@ -100,11 +100,11 @@ router.put('/:id/read', async (req, res) => {
     const { id } = req.params;
 
     try {
-        await pool.query("UPDATE notifications SET is_read = 1 WHERE id = ?", [id]);
+        await pool.query("UPDATE `notifications` SET is_read = 1 WHERE id = ?", [id]);
         res.sendStatus(200);
 
     } catch (err) {
-      console.error('Failed to maekr as read', err);
+    //   console.error('Failed to maekr as read', err);
       res.status(500).send('Server error');
     }
 });
@@ -123,7 +123,7 @@ router.get('/unread-count', async (req, res) => {
     res.json({ unread_count: rows[0].unread_count });
 
     } catch (err) {
-        console.error(err);
+        // console.error(err);
         return res.status(500).json({ error: 'Server error' });
     }
 

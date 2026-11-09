@@ -23,7 +23,7 @@ router.get('/:user1/:user2', async (req, res) => {
         const messages = await getMessagesBetweenUsers(user1Data.user_id, user2Data.user_id);
         res.json(messages);
     } catch (error) {
-        console.error('Error fetching messages:', error);
+        // console.error('Error fetching messages:', error);
         res.status(500).json({ error: 'Failed to fetch messages' });
     }
 });
@@ -55,7 +55,7 @@ router.post('/', async (req, res) => {
        
        res.status(201).json(fullMessage);
     } catch (error) {
-        console.error('Error sending message:', error);
+        // console.error('Error sending message:', error);
         res.status(500).json({ error: 'Failed to send message' });
     }
 });
@@ -92,7 +92,7 @@ router.delete('/:m_id', async (req, res) => {
         
         res.json({ message: 'Private message soft-deleted' });
     } catch (error) {
-        console.error('Error in deleting message', error);
+        // console.error('Error in deleting message', error);
         res.status(500).json({ message: 'Intenal server erro' });
     }
 
@@ -131,7 +131,7 @@ router.get('/unread', async (req, res) => {
 
         res.json(rows);
     } catch (error) {
-        console.error('Error fetching unread message', error);
+        // console.error('Error fetching unread message', error);
         res.status(500).json({ error: 'Failed to fetch unread messages' });
     }
 });
@@ -160,7 +160,7 @@ router.patch('/mark-read', async (req, res) => {
         res.json({ message: 'Message marked as read' });
 
     } catch (error) {
-        console.error('Errror marking messages as read', error);
+        // console.error('Errror marking messages as read', error);
         res.status(500).json({ error: 'Failed to update messages' });
     }
 
@@ -238,7 +238,7 @@ router.get('/userInfo', async (req, res) => {
         const sessionUser = req.session.user;
 
         const [rows] = await pool.query(
-            "SELECT user_id, name, profile_image AS profile_image FROM user WHERE user_id = ?",
+            "SELECT user_id, name, profile_image AS profile_image FROM `user` WHERE user_id = ?",
             [sessionUser.id]
         );
 
@@ -248,7 +248,7 @@ router.get('/userInfo', async (req, res) => {
 
         res.json(rows[0]);
     } catch (error) {
-        console.error("Error fetching user info:", error);
+        // console.error("Error fetching user info:", error);
         res.status(500).json({ message: "Internal server error" });
     }
 });

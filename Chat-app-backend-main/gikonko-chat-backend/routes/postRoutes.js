@@ -28,12 +28,12 @@ router.post("/", uploads.single("image"), async (req, res) => {
         }
 
         try {
-           const [result] = await db.query( "INSERT INTO posts (sender_id, content, image, created_at, visible_to) VALUES(?, ?, ?, NOW(), ?)", [sender_id, content, image, visible_to]);
+           const [result] = await db.query( "INSERT INTO `posts` (sender_id, content, image, created_at, visible_to) VALUES(?, ?, ?, NOW(), ?)", [sender_id, content, image, visible_to]);
            res.json({ success: true, message: "Post created successfully" });
 
            const postId = result.insertId;
            // fetch all parents to notify them
-           const [parents] = await db.query("SELECT user_id FROM user WHERE role = 'parent'");
+           const [parents] = await db.query("SELECT user_id FROM `user` WHERE role = 'parent'");
 
            // send notification to each parent
            for (let parent of parents) {
@@ -47,7 +47,7 @@ router.post("/", uploads.single("image"), async (req, res) => {
 
            res.json({ success: true, message: 'Post created and notification sent', postId });
         } catch (error) {
-               console.error(error);
+            //    console.error(error);
                res.status(500).json({ error: "Database error" }); 
        }
 
@@ -66,18 +66,17 @@ router.get("/", async (req, res) => {
                   ORDER BY p.created_at ASC
                   `;
 
-    const [results] = await db.query(query);
-    res.json(results);
+        const [results] = await db.query(query);
+        res.json(results);
 
     } catch (error) {
-        console.error(error);
+        // console.error(error);
         res.status(500).json({ error: "Failed to fetch posts "});
     }
            
 })
 
 // fetching posts based of their IDs
-
 router.get('/:id', async (req, res) => {
      const postId = req.params.id;
     try {
@@ -96,7 +95,7 @@ router.get('/:id', async (req, res) => {
 
         return res.json(rows[0]);
     } catch (error) {
-        console.error(error);
+        // console.error(error);
         res.status(500).json({ error: 'Error fetching post' });
     }
 })
