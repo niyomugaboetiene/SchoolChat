@@ -63,18 +63,16 @@ const markMessageAsRead = async () => {
     if (!selectedUser || !myName) return;
 
     try {
-        // Optimistically update UI first
         // this gets unread previous counts 
         setUnreadCount(prev => {
             // make copy of previous unread count
             const updated = { ...prev };
-            // removes unreadCount from the current chat 
             delete updated[selectedUser]; // Remove unread count for this user
             // return new object to update the state
             return updated;
         });
 
-        // Call the API to update the database
+        // call API to update the database
          await api.patch('/api/messages/mark-read', {
             sender: selectedUser,
             receiver: myName,

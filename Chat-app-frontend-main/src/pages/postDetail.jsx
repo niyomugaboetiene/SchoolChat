@@ -69,7 +69,6 @@ export default function PostDetail() {
 
     return (
         <div className="p-4 bg-white min-h-screen overflow-y-auto">
-            {/* Header with close button */}
             <div className="sticky top-0 bg-white z-10 p-4 border-b border-gray-200 flex justify-between items-center">
                 <button
                     onClick={handleClose}
@@ -78,10 +77,9 @@ export default function PostDetail() {
                     <X size={20} />
                 </button>
                 <h1 className="text-xl font-bold text-gray-800">Post Details</h1>
-                <div className="w-6"></div> {/* Spacer for balance */}
+                <div className="w-6"></div> 
             </div>
 
-            {/* Author section */}
             <div className="p-4 border-b border-gray-200">
                 <div className="flex items-center space-x-3">
                     {post.profile_image ? (
@@ -106,7 +104,6 @@ export default function PostDetail() {
                 </div>
             </div>
 
-            {/* Post content */}
             <div className="p-4">
                 <p className="mb-4 text-gray-800 text-base leading-relaxed">{post.content}</p>
 

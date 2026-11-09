@@ -144,140 +144,137 @@ export default function GroupMember() {
 
   }, [currentUserId, groupInfo]);
 
-  if (loading || !groupInfo) {
-    return (
-     <div className="flex justify-center py-8">
-          <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-500"></div>
-    </div>
-    )
-  }
-  return (<div className="max-w-md mx-auto p-6 bg-white rounded-lg shadow-lg mt-6">
+    if (loading || !groupInfo) {
+      return (
+      <div className="flex justify-center py-8">
+            <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+      )
+    }
+    return (<div className="max-w-md mx-auto p-6 bg-white rounded-lg shadow-lg mt-6">
 
-  <div className="flex items-center justify-between mb-8">
-    <button 
-      onClick={() => navigate("/chat")}
-      className="flex items-center gap-2 text-blue-600 hover:text-blue-800 transition-colors"
-    >
-      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-        <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
-      </svg>
-      {t('BackToChat')}
-    </button>
-    
-    <div className="w-5"></div> {/* Space for alignment */}
-  </div>
+      <div className="flex items-center justify-between mb-8">
+        <button 
+          onClick={() => navigate("/chat")}
+          className="flex items-center gap-2 text-blue-600 hover:text-blue-800 transition-colors"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
+          </svg>
+          {t('BackToChat')}
+        </button>
+        
+        <div className="w-5"></div>
+      </div>
 
-  <div className="mb-6">
-    <button
-      onClick={async () => {
-        setShowAddForm(true);
-        await fetchAvailableUsers();
-      }}
-      className="flex items-center gap-2 bg-gradient-to-l from-blue-500 to-blue-300 via-purple-500 hover:scale-105 transition duration-200 text-white px-4 py-2 rounded-lg shadow-md"
-    >
-      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-        <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-      </svg>
-      {t('AddMember')}
-    </button>
+      <div className="mb-6">
+        <button
+          onClick={async () => {
+            setShowAddForm(true);
+            await fetchAvailableUsers();
+          }}
+          className="flex items-center gap-2 bg-gradient-to-l from-blue-500 to-blue-300 via-purple-500 hover:scale-105 transition duration-200 text-white px-4 py-2 rounded-lg shadow-md"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+          </svg>
+          {t('AddMember')}
+        </button>
 
-    {showAddForm && (
-      <div className="mt-4 p-4 border border-gray-200 rounded-lg bg-gray-50 shadow-inner">
-        <h3 className="text-lg font-semibold text-gray-700 mb-3">{t('SelectUsersToAdd')}</h3>
+      {showAddForm && (
+        <div className="mt-4 p-4 border border-gray-200 rounded-lg bg-gray-50 shadow-inner">
+          <h3 className="text-lg font-semibold text-gray-700 mb-3">{t('SelectUsersToAdd')}</h3>
 
-        {availableUsers.length === 0 ? (
-          <p className="text-gray-500 italic">{t('NoAvailableUsersToAdd')}.</p>
-        ) : (
+          {availableUsers.length === 0 ? (
+            <p className="text-gray-500 italic">{t('NoAvailableUsersToAdd')}.</p>
+          ) : (
           <>
-            <div className="space-y-3 mb-4 max-h-60 overflow-y-auto pr-2">
-              {availableUsers.map((user) => (
-                <label 
-                  key={user.phone} 
-                  className="flex items-center p-3 hover:bg-gray-100 rounded-lg cursor-pointer transition-colors"
-                >
-                  <input
-                    type="checkbox"
-                    // id is used to create inique ID like user-07888888888
-                    id={`user-${user.phone}`}
-                    // checked controls if the ckeckbox is checked true/ false
-                    // if user's phone number is selected if it is truenthen it appear as selected in the screen
-                    checked={selectedUserIds.includes(user.phone)}
-                    // runs when user clicks on checkbox it call this function
-                    onChange={() => handleCheckBoxChange(user.phone)}
-                    className="h-3 w-3 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-                  />
-                  <span className="ml-3 text-gray-700 font-medium">{user.name}</span>
-                </label>
-              ))}
-            </div>
+              <div className="space-y-3 mb-4 max-h-60 overflow-y-auto pr-2">
+                {availableUsers.map((user) => (
+                  <label 
+                    key={user.phone} 
+                    className="flex items-center p-3 hover:bg-gray-100 rounded-lg cursor-pointer transition-colors"
+                  >
+                    <input
+                      type="checkbox"
+                      id={`user-${user.phone}`}
+                      checked={selectedUserIds.includes(user.phone)}
+                      onChange={() => handleCheckBoxChange(user.phone)}
+                      className="h-3 w-3 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                    />
+                    <span className="ml-3 text-gray-700 font-medium">{user.name}</span>
+                  </label>
+                ))}
+              </div>
 
-            <div className="flex justify-end gap-3">
-    
-              <button
-                onClick={handleAddMember}
-                disabled={selectedUserIds.length === 0}
-                className={`px-4 py-2 rounded-lg text-white transition-colors ${
-                  selectedUserIds.length === 0 
-                    ? 'bg-blue-400 cursor-not-allowed' 
-                    : 'bg-blue-600 hover:bg-blue-700'
-                }`}
-              >
-                {t('Add')} 
-              </button>
-                        <button
-                onClick={() => setShowAddForm(false)}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
-              >
-                {t('Cancel')}
+                <div className="flex justify-end gap-3">
+        
+                  <button
+                    onClick={handleAddMember}
+                    disabled={selectedUserIds.length === 0}
+                    className={`px-4 py-2 rounded-lg text-white transition-colors ${
+                      selectedUserIds.length === 0 
+                        ? 'bg-blue-400 cursor-not-allowed' 
+                        : 'bg-blue-600 hover:bg-blue-700'
+                    }`}
+                  >
+                    {t('Add')} 
+                  </button>
+                            <button
+                    onClick={() => setShowAddForm(false)}
+                    className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
+                  >
+                    {t('Cancel')}
 
-              </button>
-            </div>
-          </>
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         )}
       </div>
-    )}
-  </div>
 
-  <div className="space-y-4">
+    <div className="space-y-4">
         <h2 className="text-2xl font-bold text-gray-600">{t('GroupMembers')}</h2>
     {loading ? (
-      <div className="flex justify-center py-8">
-        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-500"></div>
-      </div>
-    ) : error ? (
-      <div className="p-4 bg-red-50 text-red-700 rounded-lg border border-red-200">
-        {error}
-      </div>
-    ) : members.length === 0 ? (
-      <div className="text-center py-6 text-gray-500 italic">
-       {t('NoMembers')}
-      </div>
-    ) : (
-      <ul className="divide-y divide-gray-200 border border-gray-200 rounded-lg overflow-hidden shadow-sm">
-    {members.map((member) => (
-<li className="p-4 hover:bg-blue-50 transition-colors flex items-center justify-between">
-  <div className="flex items-center">
-    <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-semibold mr-3">
-      {member.name.charAt(0).toUpperCase()}
-    </div>
-    <span className="font-medium text-gray-800">
-       {member.name}
-       {member.user_id === groupInfo?.created_by && (
-        <span className="ml-4 text-xs text-gray-500 font-normal">{t('Admin')}</span>
-       )}
-    </span>
-  </div>
+            <div className="flex justify-center py-8">
+              <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-500"></div>
+            </div>
+          ) : error ? (
+            <div className="p-4 bg-red-50 text-red-700 rounded-lg border border-red-200">
+              {error}
+            </div>
+          ) : members.length === 0 ? (
+            <div className="text-center py-6 text-gray-500 italic">
+            {t('NoMembers')}
+            </div>
+     ) : (
+       <ul className="divide-y divide-gray-200 border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+          {members.map((member) => (
+                <li className="p-4 hover:bg-blue-50 transition-colors flex items-center justify-between">
+                  <div className="flex items-center">
+                    <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-semibold mr-3">
+                      {member.name.charAt(0).toUpperCase()}
+                    </div>
+                    <span className="font-medium text-gray-800">
+                      {member.name}
+                    
+                      {member.user_id === groupInfo?.created_by && (
+                        <span className="ml-4 text-xs text-gray-500 font-normal">{t('Admin')}</span>
+                      )}
+                    </span>
+                  </div>
 
-  
-  {groupInfo?.created_by === currentUserId && member.user_id !== currentUserId && (
-    <button 
-      onClick={() => handleRemoveMember(member.user_id)}
-      className="text-sm text-red-600 hover:text-red-800"
-    >
-       {t('Remove')}
-    </button>
-  )}
-</li>
+      
+                {groupInfo?.created_by === currentUserId && member.user_id !== currentUserId && (
+                  <button 
+                    onClick={() => handleRemoveMember(member.user_id)}
+                    className="text-sm text-red-600 hover:text-red-800"
+                  >
+                    {t('Remove')}
+                  </button>
+                )}
+              </li>
         ))}
       </ul>
     )}

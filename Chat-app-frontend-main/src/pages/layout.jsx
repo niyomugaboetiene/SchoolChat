@@ -154,7 +154,6 @@ export default function Layout () {
        }, [user]);
 
         // reset badge count when user click on visit the page
-
         useEffect(() => {
             if (location.pathname === '/chat') setUnreadMessages(0);
             // if (location.pathname === '/notifications') setUnreadNotifications(0);
@@ -165,7 +164,6 @@ export default function Layout () {
         
     return (
           <div>
-               {/* Fixed Navigation Bar */}
                <div className="fixed top-0 left-0 right-0 z-50">
                     <nav className="flex justify-between items-center relative bg-gradient-to-l from-blue-500 to-blue-300 via-purple-500 text-white px-6 py-3 shadow">
                          <div className="flex gap-6 items-center">
@@ -283,7 +281,6 @@ export default function Layout () {
                     )}
                </div>
 
-               {/* Main content area with padding for fixed nav */}
                <div className="pt-36">
                     <Outlet/>
                </div>

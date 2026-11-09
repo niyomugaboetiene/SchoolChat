@@ -15,12 +15,11 @@ export default function UserDetail() {
         .catch(err => console.error('Failed to fetch user:', err));
     }, [user_id]);
 
-    if (!user) return <p className="p-4 text-center text-gray-500">Loading user profie....</p>
+    if (!user) return <p className="p-4 text-center text-gray-500">Loading user profile....</p>
 
 
     return (
         <div className="relative p-6 max-w-md mx-auto bg-white shadow-lg rounded-xl mt-20 border-gray-200">
-            {/* close buttone */}
             <button className="absolute top-4 ring-4 text-gray-400 hover:text-red-500 transition"
                title="Close"
                onClick={() => navigate(-1)}

@@ -27,14 +27,12 @@ export default function Notification () {
             setNotifications(prev => [notif, ...prev]);
         });
 
-        // clean up function to avoid memory leaks
         return () => {
             socket.off('notification');
         }
     }, []);
 
     // hande notification click
-
     const handleClick = async (notification) => {
         try {
 
@@ -67,7 +65,6 @@ export default function Notification () {
 
         } catch (error) {
            console.error('Error handling notification', error);
-         // Revert (Add) read status if error occurs
             setNotifications(prev => prev.map(n =>
                 n.id === notification.id ? { ...n, is_read: 0 } : n
             ));
@@ -99,7 +96,7 @@ export default function Notification () {
                         <span className="font-semibold capitalize">
                             {n.sender_name}
                         </span>
-                        {' '} {/*Add space between elements */}
+                        {' '} 
                         {n.type === 'profile_update' ? 'Update their profile picture' 
                                                      : n.type === 'New post' ? 'shared a new post' : n.content}
                         

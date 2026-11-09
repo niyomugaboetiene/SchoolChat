@@ -5,7 +5,6 @@ import logo from "../assets/logo 1.png"
 import { useTranslation } from "react-i18next";
 
 
-// I'll implement real phone authentication later by using twillio, firebase phone auth,  libraries..
 export default function Register() {
     const [form, setForm] = useState({ name: '', phone: '', password: '' });
     const [error, setError] = useState('');
@@ -13,14 +12,13 @@ export default function Register() {
     const navigate = useNavigate();
     const { t } = useTranslation();
 
-    // e means event like input field 
+    // e means event like input field changes
     // name: means attribute of input field like, email, text
     //value: is value of input fieled and and make copy of that values by using spread opeator(...)
     const handleChange = (e) => {
       setForm({...form, [e.target.name]: e.target.value});
     }
 
-             // fetch user profile first   
     useEffect(() => {
         api.get("/api/auth/profile")
         .then((res) => {
@@ -42,7 +40,6 @@ const handleSubmit = async (e) => {
 
     try {
         const Allowed = ['director', 'dos', 'patron', 'matron', 'dod'];
-        console.log('User role', user.role)
         if (Allowed.includes(user.role)) {
             await api.post('/api/auth/register', form);
             alert('Registered Successfully');
