@@ -69,6 +69,9 @@ app.use('/api/groups', groupRoutes);
 app.use('/api/notifications', NotificationRoutes);
 app.use('/api/settings', SettingRoute);
 
+app.get('/', async (req, res) => {
+    return res.status(200).json({ message: "I'm running. keep doing your activity!!!"})
+})
 // gives full absolute path of current file eg: /users/etiene/project/app.js
 const __filename = fileURLToPath(import.meta.url);
 // gets the only directory of the file
