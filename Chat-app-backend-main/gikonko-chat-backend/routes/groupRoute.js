@@ -179,7 +179,7 @@ router.patch('/:g_id/soft-delete', isAuthenticated, async (req, res) => {
 
     try {
         // check if the group is exist
-        const [rows] = await db.query('SELECT `created_by` FROM groups WHERE g_id = ? AND is_deleted = 0', [g_id]);
+        const [rows] = await db.query('SELECT created_by FROM `groups` WHERE g_id = ? AND is_deleted = 0', [g_id]);
 
         if (rows.length === 0) {
             return res.status(404).json({ error: 'Group not found or already deleted' })
@@ -225,7 +225,7 @@ router.patch('/rename/:g_id/name', async (req, res) => {
         }
 
         await db.query(
-            'UPDATE groups SET `group_name` = ? WHERE g_id = ?',
+            'UPDATE `groups` SET group_name = ? WHERE g_id = ?',
             [group_name.trim(), g_id]
         );
 

@@ -76,7 +76,7 @@ router.delete('/:m_id', async (req, res) => {
             return res.status(403).json({ message: 'Unauthorized'})
         }
 
-        const [rows] = await pool.query('SELECT sender_id FROM messages WHERE m_id = ?', [m_id]);
+        const [rows] = await pool.query('SELECT sender_id FROM `messages` WHERE m_id = ?', [m_id]);
 
         if (rows.length === 0) {
             return res.status(404).json({ message: 'Message not deleted' })
@@ -85,7 +85,7 @@ router.delete('/:m_id', async (req, res) => {
             return res.status(403).json({ message: 'You can only delete your own message' });
         }
 
-        await pool.query('UPDATE messages SET is_deleted = TRUE where m_id = ?', [m_id]);
+        await pool.query('UPDATE `messages` SET is_deleted = TRUE where m_id = ?', [m_id]);
 
         //emit delete event
         req.app.get('io').emit('privateMessageDeleted', { m_id });
@@ -104,7 +104,7 @@ router.get('/unread', async (req, res) => {
     try {
         const  receiver_id  = req.session.user.id;
 
-        const [userRows] = await pool.query('SELECT user_id FROM user WHERE user_id = ?', [receiver_id]);
+        const [userRows] = await pool.query('SELECT user_id FROM `user` WHERE user_id = ?', [receiver_id]);
         if (userRows.length === 0) return res.status(404).json({ error: 'User not found' });
 
         const [rows] = await pool.query(
@@ -119,7 +119,7 @@ router.get('/unread', async (req, res) => {
         // here helps to convert the user_id with their name mostly useful
         for (let row of rows) {
             const [userRows] = await pool.query(
-                'SELECT name FROM user WHERE user_id = ?',
+                'SELECT name FROM `user` WHERE user_id = ?',
                 [row.sender_id]
             );
 
@@ -174,7 +174,7 @@ router.get('/conversations', async (req, res) => {
         }
 
         const [userData] = await pool.query(
-            "SELECT user_id FROM user WHERE name = ?",
+            "SELECT user_id FROM `user` WHERE name = ?",
             [currentUser.name]
         );
 
@@ -224,7 +224,7 @@ router.get('/conversations', async (req, res) => {
         res.json(rows);
 
     } catch (error) {
-        console.error("Error fetching conversations:", error);
+        // console.error("Error fetching conversations:", error);
         res.status(500).json({ message: "Internal server error" });
     }
 });
