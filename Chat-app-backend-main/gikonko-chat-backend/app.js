@@ -42,18 +42,19 @@ const io = new Server(server, {
 
 app.use(express.json());
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads'))); // avoid issue in paths, give access to your working directory 
+app.set("trust proxy", 1); 
 
-
-const sessionMiddleware = (session({
+const sessionMiddleware = session({
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     cookie: { // defines cookies stored in user's browser
-        secure: false, // it is sent over http or https
+        secure: true, // it is sent over http or https
         httpOnly: true, // helps to proctect against XSS
-        sameSite: "lax" // prevent CSRF
-     }
-}));
+        sameSite: "none", // prevent CSRF
+        maxAge: 24 * 60 * 60 * 1000
+    }
+});
 app.use(sessionMiddleware);
 
 // this allows to use Express middleware inside the socket.IO
