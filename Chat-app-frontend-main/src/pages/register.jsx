@@ -1,92 +1,236 @@
-import React, { useState, useEffect } from "react";
+
+import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import api from "../api";
-import logo from "../assets/logo 1.png"
+import logo from "../assets/logo 1.png";
 import { useTranslation } from "react-i18next";
-
+import {
+    FiUser,
+    FiPhone,
+    FiLock,
+    FiEye,
+    FiEyeOff,
+    FiArrowLeft,
+    FiLoader,
+    FiUserPlus
+} from "react-icons/fi";
 
 export default function Register() {
-    const [form, setForm] = useState({ name: '', phone: '', password: '' });
-    const [error, setError] = useState('');
+    const [form, setForm] = useState({
+        name: "",
+        phone: "",
+        password: ""
+    });
+
+    const [error, setError] = useState("");
+    const [loading, setLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
+
     const navigate = useNavigate();
     const { t } = useTranslation();
 
-    // e means event like input field changes
-    // name: means attribute of input field like, email, text
-    //value: is value of input fieled and and make copy of that values by using spread opeator(...)
     const handleChange = (e) => {
-      setForm({...form, [e.target.name]: e.target.value});
-    }
+        setForm({
+            ...form,
+            [e.target.name]: e.target.value
+        });
 
+        if (error) setError("");
+    };
 
-const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-        // const Allowed = ['director', 'dos', 'patron', 'matron', 'dod'];
-        // if (Allowed.includes(user.role)) {
-            await api.post('/api/auth/register', form);
-            alert('Registered Successfully');
-            navigate('/');
-        // } else {
-        //     setError("You are not allowed to create Account. Ask school for more details");
-        // }
-    } catch(err) {
-        setError(err.response?.data?.message || "Error during registration");
-    }
-};
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setError("");
+        setLoading(true);
 
+        try {
+            await api.post("/api/auth/register", form);
 
+            alert("Registered Successfully");
+            navigate("/");
+        } catch (err) {
+            setError(
+                err.response?.data?.message || "Error during registration"
+            );
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
-            <div>
-            <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8">
-                <div className="flex justify-center mb-6">
-                    <img src={logo} alt="SchoolChat logo" className="h-32 w-auto"/>
+        <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-10">
+            <div className="w-full max-w-md">
+
+                <div className="mb-6 text-center">
+                    <img
+                        src={logo}
+                        alt="SchoolChat logo"
+                        className="mx-auto h-24 w-auto object-contain sm:h-28"
+                    />
+
+                    <h1 className="mt-5 text-2xl font-bold tracking-tight text-slate-900">
+                        {t("CreateFreeAccount")}
+                    </h1>
+
+                    <p className="mt-2 text-sm text-slate-500">
+                        Create your SchoolChat account and get connected.
+                    </p>
                 </div>
-               <h2 className="text-xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-tr from-blue-500 to-blue-300 via-purple-500">{t('CreateFreeAccount')}</h2>
-              {error && (
-                  <div className="mb-4 bg-red-100 text-red-600 rounded-md text-sm">
-                     {error}
-                  </div>
-             )}
-             
-            <form onSubmit={handleSubmit}  className="space-y-4">
-               <input 
-                type="text" 
-                name="name" 
-                placeholder={`${t('YourFullName')}`}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus::outline-none focus:ring-2 focus:ring-blue-500"
-                onChange={handleChange}
-                required
-                />  <br />
 
-               <input 
-                   type="phone" 
-                   name="phone" 
-                   placeholder={`${t('Phone')}`}
-                   onChange={handleChange}
-                  required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus::outline-none focus:ring-2 focus:ring-blue-500"
-                
-                /> <br />    
+                <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
 
-               <input 
-                type="password" 
-                name="password" 
-                placeholder={`${t('password')}`}
-                onChange={handleChange}
-                required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus::outline-none focus:ring-2 focus:ring-blue-500"
+                    <div className="mb-6 flex items-center gap-3">
+                        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600">
+                            <FiUserPlus size={21} />
+                        </div>
 
-                />    
-                <button type="submit" className="bg-gradient-to-l from-blue-500 to-blue-300 via-purple-500 hover:scale-105  text-white font-semibold py-2 px-4 mb-5 rounded-lg transition duration-300">
-                    {t('CreateAccount')}
-                </button>  
-            </form>
-            <Link onClick={() => navigate(-1)} className="font-normal text-blue-500 hover:underline">{t('BackToMainLogin')}</Link>      
-            </div>
+                        <div>
+                            <h2 className="font-semibold text-slate-900">
+                                {t("CreateAccount")}
+                            </h2>
+                            <p className="text-xs text-slate-500">
+                                Fill in your details below
+                            </p>
+                        </div>
+                    </div>
+
+                    {error && (
+                        <div className="mb-5 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+                            <span className="font-semibold">!</span>
+                            <p>{error}</p>
+                        </div>
+                    )}
+
+                    <form onSubmit={handleSubmit} className="space-y-5">
+
+                        <div>
+                            <label
+                                htmlFor="name"
+                                className="mb-2 block text-sm font-semibold text-slate-700"
+                            >
+                                {t("YourFullName")}
+                            </label>
+
+                            <div className="relative">
+                                <FiUser className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+
+                                <input
+                                    id="name"
+                                    type="text"
+                                    name="name"
+                                    value={form.name}
+                                    placeholder={t("YourFullName")}
+                                    onChange={handleChange}
+                                    required
+                                    autoComplete="name"
+                                    className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-11 pr-4 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-50"
+                                />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label
+                                htmlFor="phone"
+                                className="mb-2 block text-sm font-semibold text-slate-700"
+                            >
+                                {t("Phone")}
+                            </label>
+
+                            <div className="relative">
+                                <FiPhone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+
+                                <input
+                                    id="phone"
+                                    type="tel"
+                                    name="phone"
+                                    value={form.phone}
+                                    placeholder={t("Phone")}
+                                    onChange={handleChange}
+                                    required
+                                    autoComplete="tel"
+                                    className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-11 pr-4 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-50"
+                                />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label
+                                htmlFor="password"
+                                className="mb-2 block text-sm font-semibold text-slate-700"
+                            >
+                                {t("password")}
+                            </label>
+
+                            <div className="relative">
+                                <FiLock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+
+                                <input
+                                    id="password"
+                                    type={showPassword ? "text" : "password"}
+                                    name="password"
+                                    value={form.password}
+                                    placeholder={t("password")}
+                                    onChange={handleChange}
+                                    required
+                                    autoComplete="new-password"
+                                    className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-11 pr-12 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-50"
+                                />
+
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    aria-label={showPassword ? "Hide password" : "Show password"}
+                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-indigo-600"
+                                >
+                                    {showPassword ? (
+                                        <FiEyeOff size={18} />
+                                    ) : (
+                                        <FiEye size={18} />
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className="flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 py-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                            {loading ? (
+                                <>
+                                    <FiLoader className="animate-spin" size={18} />
+                                    Creating account...
+                                </>
+                            ) : (
+                                <>
+                                    <FiUserPlus size={18} />
+                                    {t("CreateAccount")}
+                                </>
+                            )}
+                        </button>
+
+                    </form>
+
+                    <div className="my-6 flex items-center gap-3">
+                        <div className="h-px flex-1 bg-slate-100" />
+                        <span className="text-xs text-slate-400">SCHOOLCHAT</span>
+                        <div className="h-px flex-1 bg-slate-100" />
+                    </div>
+
+                    <Link
+                        to="/"
+                        className="flex items-center justify-center gap-2 text-sm font-medium text-slate-500 transition hover:text-indigo-600"
+                    >
+                        <FiArrowLeft size={16} />
+                        {t("BackToMainLogin")}
+                    </Link>
+                </div>
+
+                <p className="mt-6 text-center text-xs text-slate-400">
+                    Connect. Communicate. Learn together.
+                </p>
+
             </div>
         </div>
-    )
+    );
 }
