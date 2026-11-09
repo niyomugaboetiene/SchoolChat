@@ -34,7 +34,7 @@ const API_ORIGIN = (
 const getProfileImageUrl = (image) => {
     if (!image) return null;
 
-    if (image.startsWith("http")) return image;
+    if (image.startsWith("https")) return image;
 
     return `${API_ORIGIN}/uploads/${image}`;
 };

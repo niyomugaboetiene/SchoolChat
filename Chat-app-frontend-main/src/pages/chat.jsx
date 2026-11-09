@@ -23,12 +23,12 @@ const configuredBase =
     api.defaults.baseURL ||
     import.meta.env.VITE_BACKEND_URL
 
-const API_ORIGIN = configuredBase.startsWith("http")
+const API_ORIGIN = configuredBase.startsWith("https")
     ? configuredBase.replace(/\/api\/?$/, "")
     : window.location.origin;
 
 const SOCKET_URL =
-    import.meta.env.VITE_SOCKET_URL || API_ORIGIN;
+    import.meta.env.VITE_BACKEND_URL || API_ORIGIN;
 
 const socket = io(SOCKET_URL, {
     withCredentials: true,
@@ -38,7 +38,7 @@ const socket = io(SOCKET_URL, {
 const getImageUrl = (image, isGroup = false) => {
     if (!image) return null;
 
-    if (image.startsWith("http")) return image;
+    if (image.startsWith("https")) return image;
 
     if (isGroup) {
         return `${API_ORIGIN}${image.startsWith("/") ? "" : "/"}${image}`;
