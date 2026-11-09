@@ -18,9 +18,7 @@ function App() {
 
          <Routes>
             <Route path="/" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-
-         
+        
             <Route element={<Layout/>}>
                <Route path="/dashboard" element={<Dashboard />} />
                <Route path="/dashboard/postId" element={<Dashboard />} />
@@ -32,6 +30,7 @@ function App() {
                <Route path="/notifications" element={<Notification />}/>
                <Route path="/post/:id" element={<PostDetail />}/>
                <Route path="/user/:user_id" element={<UserDetail />}/>
+               <Route path="/register" element={<Register />} />
            </Route>
          </Routes>
 

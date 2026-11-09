@@ -39,14 +39,14 @@ const handleSubmit = async (e) => {
     }
 
     try {
-        const Allowed = ['director', 'dos', 'patron', 'matron', 'dod'];
-        if (Allowed.includes(user.role)) {
+        // const Allowed = ['director', 'dos', 'patron', 'matron', 'dod'];
+        // if (Allowed.includes(user.role)) {
             await api.post('/api/auth/register', form);
             alert('Registered Successfully');
             navigate('/');
-        } else {
-            setError("You are not allowed to create Account. Ask school for more details");
-        }
+        // } else {
+        //     setError("You are not allowed to create Account. Ask school for more details");
+        // }
     } catch(err) {
         setError(err.response?.data?.message || "Error during registration");
     }

@@ -73,7 +73,12 @@ export default function Login() {
                 <hr className="border-gray-600"/>
 
                  <p className="font-semibold text-gray-800 mt-2">{t('DontYouHaveAccount')} ?</p>
-  
+                
+                 <button onClick={() => navigate('/register')}
+                   className="bg-gradient-to-l from-blue-500 to-blue-300 via-purple-500 hover:scale-105  text-white font-semibold py-2 px-4 rounded-lg transition duration-300"
+                >
+                         {t('CreateAccount')}
+              </button> 
               </div>
             </form>
         </div>
