@@ -1,513 +1,863 @@
+
 import api from "../api";
-import { Link, useNavigate, useLocation } from "react-router-dom";
-import { useState, useRef } from "react";
-import { useEffect } from "react";
-import  { FaCamera } from "react-icons/fa";
-import { FaTimes } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { FaCamera, FaTimes } from "react-icons/fa";
+import {
+    FiSettings,
+    FiUsers,
+    FiMessageCircle,
+    FiPlus,
+    FiImage,
+    FiUser,
+    FiCalendar,
+    FiSearch,
+    FiX,
+    FiUpload,
+    FiCheck,
+    FiLoader
+} from "react-icons/fi";
 import { useTranslation } from "react-i18next";
+
+const API_ORIGIN = (() => {
+    const baseURL = api.defaults.baseURL;
+
+    if (baseURL && /^https?:\/\//i.test(baseURL)) {
+        return baseURL.replace(/\/api\/?$/, "");
+    }
+
+    return typeof window !== "undefined" ? window.location.origin : "";
+})();
+
+const getImageUrl = (path) => {
+    if (!path) return "";
+
+    if (/^https?:\/\//i.test(path)) {
+        return path;
+    }
+
+    const imagePath = path.startsWith("/") ? path : `/uploads/${path}`;
+
+    return `${API_ORIGIN}${imagePath}`;
+};
+
 export default function Dashboard() {
-    const [user, setUser] = useState("");
+    const [user, setUser] = useState(null);
     const [allUsers, setAllUsers] = useState([]);
     const [content, setContent] = useState("");
     const [image, setImage] = useState(null);
     const [profileImage, setProfileImage] = useState(null);
-    const [selectedFile, setSelectedFile] = useState(null);
     const [showPostForm, setShowPostForm] = useState(false);
     const [showprofileMenu, setShowProfileMenu] = useState(false);
-    const [showFullProfile,  setShowFullProfile] = useState(false); // for showing profile image
-    const [selectedImage, setSelectedImage] = useState(null); // for showing full image of other users
+    const [showFullProfile, setShowFullProfile] = useState(false);
+    const [selectedImage, setSelectedImage] = useState(null);
     const [post, setPost] = useState([]);
+    const [searchUser, setSearchUser] = useState("");
+
     const navigate = useNavigate();
-    const { t } = useTranslation()
+    const { t } = useTranslation();
 
-
-    //for setting customization
     const [showSettingModal, setShowSettingModal] = useState(false);
     const [name, setName] = useState("");
     const [phone, setPhone] = useState("");
     const [oldPassword, setOldPassword] = useState("");
     const [newPassword, setNewPassword] = useState("");
     const [message, setMessage] = useState("");
-    
-   useEffect(() => {
 
-    const handleUpdateSettings = async () => {
+    const [loadingPosts, setLoadingPosts] = useState(true);
+    const [isPostSubmitting, setIsPostSubmitting] = useState(false);
+    const [isSettingsSaving, setIsSettingsSaving] = useState(false);
+    const [isProfileUploading, setIsProfileUploading] = useState(false);
+
+    useEffect(() => {
+        const handleUpdateSettings = async () => {
+            try {
+                const res = await api.get("/api/settings/me", {
+                    withCredentials: true
+                });
+
+                setName(res.data.name || "");
+                setPhone(res.data.phone || "");
+            } catch (error) {
+                console.error(error);
+            }
+        };
+
+        handleUpdateSettings();
+    }, []);
+
+    const handleSettingSubmit = async (e) => {
+        e.preventDefault();
+        setIsSettingsSaving(true);
+        setMessage("");
 
         try {
-          const res = await api.get('/api/settings/me', { withCredentials: true });
-          setName(res.data.name || "");
-          setPhone(res.data.phone || "");
+            const res = await api.post(
+                "/api/settings/update",
+                { name, phone, oldPassword, newPassword },
+                { withCredentials: true }
+            );
 
+            setMessage(res.data.message);
+            setNewPassword("");
+            setOldPassword("");
+
+            setUser((prev) => ({
+                ...prev,
+                name,
+                phone
+            }));
+        } catch (err) {
+            setMessage(err.response?.data?.message || "Update failed");
+        } finally {
+            setIsSettingsSaving(false);
+        }
+    };
+
+    const fetchPosts = async () => {
+        try {
+            const res = await api.get("/api/posts");
+            setPost(res.data);
         } catch (error) {
-          console.error(error);
-       }
+            console.error("Error fetching posts:", error);
+        } finally {
+            setLoadingPosts(false);
+        }
+    };
 
-}
-  handleUpdateSettings();
-  
-}, []);
-
-const handleSettingSubmit = async (e) => {
-    e.preventDefault();
-
-    try {
-
-        const res = await api.post(
-            "/api/settings/update", 
-            {name, phone, oldPassword, newPassword },
-            { withCredentials: true }
-        );
-
-        setMessage(res.data.message);
-        setNewPassword("");
-        setOldPassword("");
-
-    } catch (err) {
-        setMessage(err.response.data?.message || "Update failed");
-    }
-}
-
-
-    // new code
     const handlePostSubmit = async (e) => {
         e.preventDefault();
 
+        if (!content.trim() && !image) return;
+
         const formData = new FormData();
         formData.append("content", content);
-        if (image) formData.append("image", image);
+
+        if (image) {
+            formData.append("image", image);
+        }
+
+        setIsPostSubmitting(true);
 
         try {
             await api.post("/api/posts", formData);
-            
+
             setContent("");
             setImage(null);
-            fetchPosts()
+            setShowPostForm(false);
+
+            await fetchPosts();
         } catch (err) {
             alert("Post failed.");
+        } finally {
+            setIsPostSubmitting(false);
         }
-    }
-
-    const fetchPosts = async () => {
-        const res = await api.get("/api/posts");
-        setPost(res.data);
     };
 
     useEffect(() => {
         fetchPosts();
     }, []);
+
     useEffect(() => {
-        api.get('/api/auth/profile')
-        .then((res) => {
-            console.log("User profile data:", res.data);
-            setUser(res.data);
-            return api.get('/api/users');
-        })
-        .then((res) => {
-            setAllUsers(res.data);
-            console.log("All users data:", res.data);
+        const fetchDashboardData = async () => {
+            try {
+                const profileResponse = await api.get("/api/auth/profile");
+                setUser(profileResponse.data);
 
-        })
-        .catch(() => {
-            console.error("Error fetching profile or users:", err);
-            alert("Please login first");
-            navigate('/');
-        })
-    }, []);
+                const usersResponse = await api.get("/api/users");
+                setAllUsers(usersResponse.data);
+            } catch (err) {
+                console.error("Error fetching profile or users:", err);
+                alert("Please login first");
+                navigate("/");
+            }
+        };
 
+        fetchDashboardData();
+    }, [navigate]);
 
     function formatTimeStamp(timestamp) {
-       const date = new Date(timestamp);
-       const year = date.getFullYear();
-       const month = String(date.getMonth() + 1).padStart(2, '0'); 
-       const day = String(date.getDate()).padStart(2, '0');
-       const hour = String(date.getHours()).padStart(2, '0');
-       const minute = String(date.getMinutes()).padStart(2, '0');
+        if (!timestamp) return "";
 
-      return `${year}-${month}-${day} ${hour}:${minute}`;
+        const date = new Date(timestamp);
 
-} 
+        if (Number.isNaN(date.getTime())) return "";
 
-    if (!user) return <p className="text-center mt-10">Loading.....</p>
+        return date.toLocaleString([], {
+            dateStyle: "medium",
+            timeStyle: "short"
+        });
+    }
+
+    const handleProfileUpload = async (e) => {
+        const file = e.target.files?.[0];
+
+        if (!file) return;
+
+        const previousImage = profileImage;
+        const previewUrl = URL.createObjectURL(file);
+
+        setProfileImage(previewUrl);
+        setShowProfileMenu(false);
+        setIsProfileUploading(true);
+
+        const formData = new FormData();
+        formData.append("profile_image", file);
+
+        try {
+            const response = await api.post(
+                "/api/users/change-profile-photo",
+                formData,
+                {
+                    headers: {
+                        "Content-Type": "multipart/form-data"
+                    },
+                    withCredentials: true
+                }
+            );
+
+            if (response.data.profile_image) {
+                setUser((prev) => ({
+                    ...prev,
+                    profile_image: response.data.profile_image
+                }));
+
+                setProfileImage(getImageUrl(response.data.profile_image));
+                alert("Photo changed successfully");
+            }
+        } catch (error) {
+            console.error(error);
+            setProfileImage(previousImage);
+            alert("Upload failed " + (error.response?.data?.error || ""));
+        } finally {
+            setIsProfileUploading(false);
+            e.target.value = "";
+        }
+    };
+
+    const filteredUsers = allUsers.filter((u) =>
+        u.name?.toLowerCase().includes(searchUser.toLowerCase())
+    );
+
+    if (!user) {
+        return (
+            <div className="min-h-screen -mt-20 pt-24 bg-slate-50 flex items-center justify-center">
+                <div className="flex flex-col items-center gap-3">
+                    <FiLoader className="animate-spin text-3xl text-indigo-600" />
+                    <p className="text-sm font-medium text-slate-500">
+                        Loading your dashboard...
+                    </p>
+                </div>
+            </div>
+        );
+    }
 
     return (
- <div className="min-h-screen flex -mt-20">
-<aside className="w-64 bg-white p-6 border-r border-gray-200 shadow-sm fixed top-20 left-0 bottom-0 z-10 overflow-y-auto">
+        <div className="min-h-screen -mt-20 pt-24 pb-8 bg-slate-50">
+            <div className="max-w-[1500px] mx-auto px-4 sm:px-6">
+                <div className="grid grid-cols-1 lg:grid-cols-[260px_minmax(0,1fr)] xl:grid-cols-[260px_minmax(0,1fr)_280px] gap-6 items-start">
 
-<h2 className="text-xl font-semibold text-gray-800 mb-6">{t('MyProfile')}</h2>
-
-<div className="mb-8">
-
-  <div className="relative group w-20 h-20 mb-4">
-    {user.profile_image ? (
-      <img
-        src={`http://localhost:4000/uploads/${user.profile_image}`}
-        alt={user.name}
-        className="w-full h-full rounded-full object-cover border-2 border-gray-100 shadow"
-      />
-    ) : (
-      <div className="w-full h-full rounded-full bg-blue-600 flex items-center justify-center text-white text-4xl font-bold shadow">
-        {user.name.charAt(0).toUpperCase()}
-      </div>
-    )}
-
-    <div className="absolute bottom-0 right-0 bg-white rounded-full shadow p-1 cursor-pointer hover:bg-blue-100  group/edit">
-          <FaCamera className="text-blue-600 text-lg"
-            onClick={() => setShowProfileMenu(true)} 
-        />
-    </div>
-
-    {showprofileMenu && (
-        <div className="absolute z-10 top-full mt-2 left-20 -translate-x-1/2 bg-white border rounded shadow-md text-sm w-44">
-            <button
-            onClick={() => {
-                setShowProfileMenu(false);
-                setShowFullProfile(true);
-            }}
-             className="w-full px-4 py-2 hover:bg-gray-100 text-left"
-            >
-                {t('ViewProfilePictute')}
-            </button>
-
-            <label htmlFor="profileUpload"
-              className="w-full block px-4 py-2 hover:bg-gray-100 text-left cursor-pointer"
-            >
-                {t('ChangeProfilePicture')}
-            </label>
-        </div>
-    )}
- 
-    <input
-      id="profileUpload"
-      type="file"
-      accept="image/*"
-      className="hidden"
-      onChange={ async (e) => {
-        setShowProfileMenu(false);
-        if (e.target.files && e.target.files[0]) {
-            setProfileImage(URL.createObjectURL(e.target.files[0]));
-            setSelectedFile(e.target.files[0]);
-
-            const formData = new FormData();
-            formData.append('profile_image', e.target.files[0]);
-
-            try {
-                const response = await api.post(
-                    "/api/users/change-profile-photo",
-                    formData, 
-                    {
-                      // this headers telling the server that it is sending files
-                        headers: { 'Content-Type': 'multipart/form-data' },
-                        withCredentials: true
-                    }
-                );
-
-                // update profile image
-                if (response.data.profile_image) {
-                    setUser((prev) => ({
-                        ...prev,
-                        profile_image: response.data.profile_image
-                    }));
-                    alert('Photo changed successfully');
-                }
-            } catch (error) {
-                console.error(error);
-                alert('Upload failed' + (error.response?.data?.error || ""));
-            }
-        }
-      }}
-    />
-    
-  </div> 
-
- 
-  <div className="space-y-3 text-sm text-gray-700">
-
-    <div className="flex flex-col items-start">
-      <span className="text-xs font-medium text-gray-500">{t('Name')}</span>
-      <span className="font-medium">{user.name}</span>
-    </div>
-    <div className="flex flex-col items-start">
-      <span className="text-xs font-medium text-gray-500">{t('Phone')}</span>
-      <span className="font-medium">{user.phone}</span>
-    </div>
-    <div className="flex flex-col items-start">
-      <span className="text-xs font-medium text-gray-500">{t('Role')}</span>
-      <span className="font-medium capitalize">{user.role}</span>
-    </div>
-  </div>
-  <div>
-<button
-  onClick={() => setShowSettingModal(true)}
-  className="flex items-center gap-2 rounded-2xl bg-gradient-to-l from-blue-500 to-blue-300 via-purple-500 hover:scale-105  text-white px-4 py-2 text-sm font-medium shadow-md transition duration-200 mt-4"
->
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    className="h-4 w-4"
-    fill="none"
-    viewBox="0 0 24 24"
-    stroke="currentColor"
-  >
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.25 3c.41 0 .75.34.75.75v.82a7.5 7.5 0 012.49.77l.58-.58a.75.75 0 111.06 1.06l-.58.58c.4.74.7 1.54.86 2.39h.82a.75.75 0 010 1.5h-.82a7.53 7.53 0 01-.86 2.39l.58.58a.75.75 0 11-1.06 1.06l-.58-.58a7.5 7.5 0 01-2.49.77v.82a.75.75 0 01-1.5 0v-.82a7.5 7.5 0 01-2.49-.77l-.58.58a.75.75 0 11-1.06-1.06l.58-.58a7.53 7.53 0 01-.86-2.39h-.82a.75.75 0 010-1.5h.82a7.53 7.53 0 01.86-2.39l-.58-.58a.75.75 0 111.06-1.06l.58.58a7.5 7.5 0 012.49-.77v-.82c0-.41.34-.75.75-.75z" />
-  </svg>
-
-  {t('Settings')}
-</button>
-
-</div>
-</div>
-
-</aside>
-
-  <main className="flex-1 ml-64 overflow-y-auto p-6 bg-white h-screen">
-
-           <div className="sticky -top-6 z-2 mb-4 bg-white py-2">
-            {['director', 'dos', 'patron', 'matron', 'dod'].includes(user.role) && (
-            <button 
-              onClick={() => setShowPostForm(true)}
-              className="mb-4 px-4 py-2 bg-gradient-to-l from-blue-500 to-blue-300 via-purple-500 hover:scale-105 transition duration-200 text-white rounded"
-            >
-                {t('CreatePost')}
-            </button>
-          )} 
-           </div>
-
-
-              <h2 className="text-xl font-semibold text-gray-700 border-b border-gray-200 pb-2 px-1">
-                {t('RecentPosts')}
-             </h2>
-
-              {post.map((post) => {
-              return (
-                  <div key={post.post_id} 
-  
-                     className={`p-4 border rounded shadow mb-4 bg-gray-50 transition-all duration-300 hover:bg-blue-100`}
-                  >
-                     <div className="flex items-center gap-2 mb-2">
-                        {post.profile_image ? (
-                            <img src={`http://localhost:4000/uploads/${post.profile_image}`} alt={post.name} 
-                              onClick={() => setSelectedImage(`http://localhost:4000/uploads/${post.profile_image}`)}
-                              className="w-10 h-10 rounded-full object-cover border shadow"/>
-                        ) : (
-                            <div className="w-10 h-10  rounded-full bg-blue-600 flex items-center justify-center text-white text-lg font-semibold shadow">
-                                {post.name.charAt(0).toUpperCase()}
+                    <aside className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5 lg:sticky lg:top-24">
+                        <div className="flex items-center justify-between mb-6">
+                            <h2 className="text-sm font-bold uppercase tracking-wider text-slate-500">
+                                {t("MyProfile")}
+                            </h2>
+                            <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                                <FiUser size={17} />
                             </div>
-                        )}
-                        <div>
-                            <p className="font-semibold text-gray-900 capitalize">
-                              {post.name} <span className="font-semibold text-gray-600 text-sm">({post.role})</span>
-                            </p>
-                           <span className="text-xs text-gray-800 absolute right-[260px] bg-yellow-100 p-1 rounded-full px-2 ">
-                              {formatTimeStamp(post.created_at)}
-                          </span>
-                        </div> 
-                 </div>
+                        </div>
 
-               {post.content && <p className="mb-2">{post.content}</p>}
-               {post.image && (
-               <img
-                 src={`http://localhost:4000/uploads/${post.image}`}
-                 alt="Post"
-                 className="w-64 h-auto rounded shadow-md object-cover"
-            />
-         )}
-        </div>
-      );
-     })}
-  </main>
-             <aside className="w-64 bg-gray-50 p-4 border-1 shadow-sm overflow-y-auto fixed top-20 right-0 h-full z-10">
-                <h2 className="text-lg font-bold mb-4 text-gray-700">{t('AllUsers')}</h2>
-                <ul className="space-y-2">
-                    {allUsers.map((u) => (
-                        <li key={u.phone}>
-                            <button
-                               onClick={() => navigate(`/chat?user=${u.name}`)}
-                               className="w-full p-2 bg-white hover:bg-blue-100 rounded flex justify-between items-center text-left"
-                            >
-
-                                <div>
-                                    <div className="flex flex-col items-start">
-                                       <strong className="text-sm text-gray-900 capitalize">{u.name}</strong>
-                                       <span className="text-xs text-gray-600 capitalize">{u.role}</span>
-                                    </div>
-
-                                </div>
-                               {u.profile_image ? (
-                                    <img src={`http://localhost:4000/uploads/${u.profile_image}`} alt={u.name}
-                                    onClick={(e) => {
-                                        e.stopPropagation(); // prevent button click or navigate to chat
-                                        setSelectedImage(`http://localhost:4000/uploads/${u.profile_image}`);
-                                    }}
-                                      className="w-10 h-10 object-cover border shadow rounded-full"
+                        <div className="flex flex-col items-center text-center pb-6 border-b border-slate-100">
+                            <div className="relative group w-24 h-24 mb-4">
+                                {profileImage || user.profile_image ? (
+                                    <img
+                                        src={profileImage || getImageUrl(user.profile_image)}
+                                        alt={user.name}
+                                        className="w-full h-full rounded-full object-cover border-4 border-white shadow-md"
                                     />
                                 ) : (
-                                    <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white text-lg font-semibold shadow">
-                                        {u.name.charAt(0).toUpperCase()}
+                                    <div className="w-full h-full rounded-full bg-indigo-600 flex items-center justify-center text-white text-3xl font-bold shadow-md">
+                                        {user.name?.charAt(0).toUpperCase()}
                                     </div>
                                 )}
-                            </button>
-                        </li>
-                    ))}
-                </ul>
-                                   
-     {selectedImage && (
-       <div
-          className="fixed inset-0 z-50 bg-black bg-opacity-70 flex items-center justify-center"
-          onClick={() => setSelectedImage(null)} // click outside to close
-        >
 
-        <div className="relative">
-        <div className="p-4 rounded shadow-lg max-w-xl max-h-[90vh]"
-             onClick={(e) => e.stopPropagation()} // prevent closing when user click on image
-        >
-         <img src={selectedImage} alt="Full user Image" 
-            className="max-w-full max-h-[90vh] rounded h-auto"
-         />
-        </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowProfileMenu(!showprofileMenu)}
+                                    className="absolute bottom-0 right-0 w-9 h-9 rounded-full bg-white border border-slate-200 shadow-md flex items-center justify-center text-indigo-600 hover:bg-indigo-50 transition"
+                                    aria-label="Edit profile picture"
+                                >
+                                    {isProfileUploading ? (
+                                        <FiLoader className="animate-spin" />
+                                    ) : (
+                                        <FaCamera />
+                                    )}
+                                </button>
 
-        </div>
-      </div>
-    )}
-</aside>
+                                {showprofileMenu && (
+                                    <div className="absolute z-30 top-full mt-3 left-1/2 -translate-x-1/2 bg-white border border-slate-200 rounded-xl shadow-xl text-sm w-48 overflow-hidden">
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setShowProfileMenu(false);
+                                                setShowFullProfile(true);
+                                            }}
+                                            className="w-full px-4 py-3 hover:bg-slate-50 text-left text-slate-700 transition"
+                                        >
+                                            {t("ViewProfilePictute")}
+                                        </button>
 
-             
-  {showPostForm && (                  
-   <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 shadow-lg">
-            <div className="bg-white p-6 rounded shadow-lg w-full max-w-md mx-4">
-             <div className="flex justify-end">
-                <button
-                 type="button"
-                 onClick={() => setShowPostForm(false)}
-                 className="text-red-500 hover:text-red-700 focus:outline-none"
-                 aria-label="Close Modal"
+                                        <label
+                                            htmlFor="profileUpload"
+                                            className="w-full flex items-center gap-2 px-4 py-3 hover:bg-slate-50 text-left text-slate-700 cursor-pointer transition"
+                                        >
+                                            <FiUpload />
+                                            {t("ChangeProfilePicture")}
+                                        </label>
+                                    </div>
+                                )}
+
+                                <input
+                                    id="profileUpload"
+                                    type="file"
+                                    accept="image/*"
+                                    className="hidden"
+                                    onChange={handleProfileUpload}
+                                />
+                            </div>
+
+                            <h3 className="text-lg font-bold text-slate-900 capitalize">
+                                {user.name}
+                            </h3>
+
+                            <span className="mt-1 px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xs font-semibold capitalize">
+                                {user.role}
+                            </span>
+                        </div>
+
+                        <div className="space-y-5 py-6">
+                            <div>
+                                <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
+                                    {t("Name")}
+                                </p>
+                                <p className="text-sm font-semibold text-slate-800 capitalize">
+                                    {user.name}
+                                </p>
+                            </div>
+
+                            <div>
+                                <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
+                                    {t("Phone")}
+                                </p>
+                                <p className="text-sm font-semibold text-slate-800">
+                                    {user.phone || "Not provided"}
+                                </p>
+                            </div>
+
+                            <div>
+                                <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
+                                    {t("Role")}
+                                </p>
+                                <p className="text-sm font-semibold text-slate-800 capitalize">
+                                    {user.role}
+                                </p>
+                            </div>
+                        </div>
+
+                        <button
+                            type="button"
+                            onClick={() => setShowSettingModal(true)}
+                            className="w-full flex items-center justify-center gap-2 rounded-xl bg-slate-900 hover:bg-indigo-700 text-white px-4 py-3 text-sm font-semibold transition duration-200"
+                        >
+                            <FiSettings size={17} />
+                            {t("Settings")}
+                        </button>
+                    </aside>
+
+                    <main className="min-w-0">
+                        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5 sm:p-6 mb-6">
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                                <div>
+                                    <p className="text-xs font-bold uppercase tracking-widest text-indigo-600 mb-2">
+                                        School Community
+                                    </p>
+                                    <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">
+                                        Welcome back, <span className="capitalize">{user.name}</span>
+                                    </h1>
+                                    <p className="text-sm text-slate-500 mt-2">
+                                        Stay connected with your school community.
+                                    </p>
+                                </div>
+
+                                <div className="hidden sm:flex w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 items-center justify-center">
+                                    <FiMessageCircle size={26} />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center justify-between mb-5">
+                            <div>
+                                <h2 className="text-xl font-bold text-slate-900">
+                                    {t("RecentPosts")}
+                                </h2>
+                                <p className="text-sm text-slate-500 mt-1">
+                                    Updates from your school community
+                                </p>
+                            </div>
+
+                            {["director", "dos", "patron", "matron", "dod"].includes(user.role) && (
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPostForm(true)}
+                                    className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl shadow-sm transition"
+                                >
+                                    <FiPlus size={18} />
+                                    <span className="hidden sm:inline">{t("CreatePost")}</span>
+                                    <span className="sm:hidden">Post</span>
+                                </button>
+                            )}
+                        </div>
+
+                        <div className="space-y-5">
+                            {loadingPosts ? (
+                                Array.from({ length: 3 }).map((_, index) => (
+                                    <div
+                                        key={index}
+                                        className="bg-white border border-slate-200 rounded-2xl p-5 animate-pulse"
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-11 h-11 rounded-full bg-slate-200" />
+                                            <div className="space-y-2">
+                                                <div className="w-32 h-3 bg-slate-200 rounded" />
+                                                <div className="w-20 h-2 bg-slate-100 rounded" />
+                                            </div>
+                                        </div>
+                                        <div className="w-full h-3 bg-slate-100 rounded mt-5" />
+                                        <div className="w-3/4 h-3 bg-slate-100 rounded mt-2" />
+                                    </div>
+                                ))
+                            ) : post.length === 0 ? (
+                                <div className="bg-white border border-dashed border-slate-300 rounded-2xl py-16 px-6 text-center">
+                                    <div className="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto mb-4">
+                                        <FiMessageCircle size={25} />
+                                    </div>
+                                    <h3 className="font-bold text-slate-800">
+                                        No posts yet
+                                    </h3>
+                                    <p className="text-sm text-slate-500 mt-2">
+                                        School updates will appear here when they are published.
+                                    </p>
+                                </div>
+                            ) : (
+                                post.map((postItem) => (
+                                    <article
+                                        key={postItem.post_id}
+                                        className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden hover:shadow-md transition duration-200"
+                                    >
+                                        <div className="p-5 sm:p-6">
+                                            <div className="flex items-center justify-between gap-3 mb-4">
+                                                <div className="flex items-center gap-3 min-w-0">
+                                                    {postItem.profile_image ? (
+                                                        <img
+                                                            src={getImageUrl(postItem.profile_image)}
+                                                            alt={postItem.name}
+                                                            onClick={() =>
+                                                                setSelectedImage(getImageUrl(postItem.profile_image))
+                                                            }
+                                                            className="w-11 h-11 rounded-full object-cover border border-slate-200 cursor-pointer"
+                                                        />
+                                                    ) : (
+                                                        <div className="w-11 h-11 rounded-full bg-indigo-600 flex items-center justify-center text-white text-lg font-bold shrink-0">
+                                                            {postItem.name?.charAt(0).toUpperCase()}
+                                                        </div>
+                                                    )}
+
+                                                    <div className="min-w-0">
+                                                        <p className="font-bold text-sm text-slate-900 capitalize truncate">
+                                                            {postItem.name}
+                                                        </p>
+                                                        <p className="text-xs text-slate-500 capitalize mt-0.5">
+                                                            {postItem.role}
+                                                        </p>
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex items-center gap-1.5 text-xs text-slate-400 shrink-0">
+                                                    <FiCalendar size={13} />
+                                                    <span>{formatTimeStamp(postItem.created_at)}</span>
+                                                </div>
+                                            </div>
+
+                                            {postItem.content && (
+                                                <p className="text-sm sm:text-base leading-7 text-slate-700 whitespace-pre-wrap mb-4">
+                                                    {postItem.content}
+                                                </p>
+                                            )}
+
+                                            {postItem.image && (
+                                                <div className="rounded-xl overflow-hidden bg-slate-50 border border-slate-100">
+                                                    <img
+                                                        src={getImageUrl(postItem.image)}
+                                                        alt="Post"
+                                                        onClick={() =>
+                                                            setSelectedImage(getImageUrl(postItem.image))
+                                                        }
+                                                        className="w-full max-h-[520px] object-contain cursor-zoom-in"
+                                                    />
+                                                </div>
+                                            )}
+                                        </div>
+                                    </article>
+                                ))
+                            )}
+                        </div>
+                    </main>
+
+                    <aside className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5 xl:sticky xl:top-24">
+                        <div className="flex items-center justify-between mb-5">
+                            <div>
+                                <h2 className="text-base font-bold text-slate-900">
+                                    {t("AllUsers")}
+                                </h2>
+                                <p className="text-xs text-slate-500 mt-1">
+                                    {allUsers.length} members
+                                </p>
+                            </div>
+
+                            <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                                <FiUsers size={18} />
+                            </div>
+                        </div>
+
+                        <div className="relative mb-4">
+                            <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                            <input
+                                type="text"
+                                value={searchUser}
+                                onChange={(e) => setSearchUser(e.target.value)}
+                                placeholder="Search members..."
+                                className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition"
+                            />
+                        </div>
+
+                        <ul className="space-y-1 max-h-[500px] overflow-y-auto">
+                            {filteredUsers.map((u) => (
+                                <li key={u.phone || u.user_id || u.name}>
+                                    <button
+                                        type="button"
+                                        onClick={() => navigate(`/chat?user=${encodeURIComponent(u.name)}`)}
+                                        className="w-full p-3 hover:bg-indigo-50 rounded-xl flex items-center gap-3 text-left transition group"
+                                    >
+                                        {u.profile_image ? (
+                                            <img
+                                                src={getImageUrl(u.profile_image)}
+                                                alt={u.name}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setSelectedImage(getImageUrl(u.profile_image));
+                                                }}
+                                                className="w-10 h-10 rounded-full object-cover border border-slate-200 shrink-0 cursor-zoom-in"
+                                            />
+                                        ) : (
+                                            <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-sm font-bold shrink-0">
+                                                {u.name?.charAt(0).toUpperCase()}
+                                            </div>
+                                        )}
+
+                                        <div className="min-w-0 flex-1">
+                                            <p className="text-sm font-semibold text-slate-800 capitalize truncate group-hover:text-indigo-700">
+                                                {u.name}
+                                            </p>
+                                            <p className="text-xs text-slate-500 capitalize truncate mt-0.5">
+                                                {u.role}
+                                            </p>
+                                        </div>
+
+                                        <FiMessageCircle className="text-slate-300 group-hover:text-indigo-600 shrink-0" />
+                                    </button>
+                                </li>
+                            ))}
+                        </ul>
+
+                        {filteredUsers.length === 0 && (
+                            <div className="text-center py-8">
+                                <FiUsers className="mx-auto text-2xl text-slate-300 mb-2" />
+                                <p className="text-sm text-slate-500">
+                                    No members found.
+                                </p>
+                            </div>
+                        )}
+                    </aside>
+                </div>
+            </div>
+
+            {selectedImage && (
+                <div
+                    className="fixed inset-0 z-[100] bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-4"
+                    onClick={() => setSelectedImage(null)}
                 >
-                    {<FaTimes size={20}/>}
-                </button>
-            </div>   
+                    <button
+                        type="button"
+                        onClick={() => setSelectedImage(null)}
+                        className="absolute top-5 right-5 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition"
+                    >
+                        <FaTimes size={19} />
+                    </button>
 
-            <form
-                className="flex flex-col gap-4"
-                onSubmit={(e) => {
-                    handlePostSubmit(e);
-                   setShowPostForm(false); // close modal after submit
-
-                }}
-                encType="multipart/form-data"
-            >
-         
-                <h3 className="text-sm font-semibold text-gray-700">{t('CreatePost')}</h3>
-                
-                <textarea 
-                    value={content}
-                    onChange={(e) => setContent(e.target.value)}
-                    placeholder="Share an update..."
-                    className="w-full border border-gray-200 p-3 rounded text-sm resize-none min-h-[100px] focus:outline-none focus:ring-1 focus:ring-blue-300"
-                ></textarea>
-
-                <div className="flex flex-col items-start w-full">
-                    <label className="text-xs font-medium text-gray-600 mb-1">{t('UploadImage')}</label>
-                    <input 
-                        type="file" 
-                        onChange={(e) => setImage(e.target.files[0])}
-                        className="w-full text-xs text-gray-600 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    <img
+                        src={selectedImage}
+                        alt="Full user image"
+                        onClick={(e) => e.stopPropagation()}
+                        className="max-w-full max-h-[88vh] object-contain rounded-xl shadow-2xl"
                     />
                 </div>
-                
-                <button
-                    type="submit"
-                    disabled={!content && !image}
-                    className={`w-full  text-white px-4 py-2 rounded text-sm font-medium  focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-500 mt-2
-                               ${!content && !image ? "bg-gray-400 cursor-not-allowed" : "bg-gradient-to-l from-blue-500 to-blue-300 via-purple-500 hover:scale-105 text-white"}`}
+            )}
+
+            {showPostForm && (
+                <div
+                    className="fixed inset-0 z-[100] bg-slate-950/50 backdrop-blur-sm flex items-center justify-center p-4"
+                    onClick={() => !isPostSubmitting && setShowPostForm(false)}
                 >
-                    {t('PublishPost')}
-                </button>
-            </form>
-        </div>
-   </div>
+                    <div
+                        className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
+                            <div>
+                                <h3 className="text-lg font-bold text-slate-900">
+                                    {t("CreatePost")}
+                                </h3>
+                                <p className="text-xs text-slate-500 mt-1">
+                                    Share something with your school community.
+                                </p>
+                            </div>
 
-    )}
-{showSettingModal && (
- <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-     <div className="bg-white p-6 rounded shadow-2xl max-w-md w-full">
-        <div className="flex justify-between">
-             <h3 className="text-lg font-semibold mb-4 text-gray-600">{t('EditSettings')}</h3>
-               <button 
-                  onClick={() => setShowSettingModal(false)}
-                  className=" px-4 py-2 text-red-500 rounded hover:text-red-600 font-bold text-xl"
+                            <button
+                                type="button"
+                                onClick={() => setShowPostForm(false)}
+                                disabled={isPostSubmitting}
+                                className="w-9 h-9 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-red-500 transition"
+                            >
+                                <FaTimes size={17} />
+                            </button>
+                        </div>
+
+                        <form
+                            className="p-6 flex flex-col gap-5"
+                            onSubmit={handlePostSubmit}
+                            encType="multipart/form-data"
+                        >
+                            <textarea
+                                value={content}
+                                onChange={(e) => setContent(e.target.value)}
+                                placeholder="What's happening at school?"
+                                className="w-full border border-slate-200 p-4 rounded-xl text-sm resize-none min-h-[140px] outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition"
+                            />
+
+                            <div className="border border-dashed border-slate-300 rounded-xl p-4">
+                                <label className="flex items-center gap-3 cursor-pointer">
+                                    <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                                        <FiImage size={19} />
+                                    </div>
+
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-semibold text-slate-700">
+                                            {t("UploadImage")}
+                                        </p>
+                                        <p className="text-xs text-slate-400 mt-1">
+                                            Choose an image to attach to your post.
+                                        </p>
+                                    </div>
+
+                                    <FiUpload className="text-slate-400" />
+
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        className="hidden"
+                                        onChange={(e) => setImage(e.target.files?.[0] || null)}
+                                    />
+                                </label>
+
+                                {image && (
+                                    <div className="flex items-center justify-between mt-4 p-2 bg-slate-50 rounded-lg">
+                                        <span className="text-xs text-slate-600 truncate">
+                                            {image.name}
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={() => setImage(null)}
+                                            className="text-red-500 hover:text-red-700 p-1"
+                                        >
+                                            <FiX size={17} />
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+
+                            <button
+                                type="submit"
+                                disabled={(!content.trim() && !image) || isPostSubmitting}
+                                className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white px-4 py-3 rounded-xl text-sm font-semibold transition"
+                            >
+                                {isPostSubmitting ? (
+                                    <>
+                                        <FiLoader className="animate-spin" />
+                                        Publishing...
+                                    </>
+                                ) : (
+                                    <>
+                                        <FiCheck />
+                                        {t("PublishPost")}
+                                    </>
+                                )}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {showSettingModal && (
+                <div
+                    className="fixed inset-0 z-[100] bg-slate-950/50 backdrop-blur-sm flex items-center justify-center p-4"
+                    onClick={() => setShowSettingModal(false)}
                 >
-                    <FaTimes />
-               </button>
-        </div>
+                    <div
+                        className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
+                            <div>
+                                <h3 className="text-lg font-bold text-slate-900">
+                                    {t("EditSettings")}
+                                </h3>
+                                <p className="text-xs text-slate-500 mt-1">
+                                    Update your account information.
+                                </p>
+                            </div>
 
-        <form onSubmit={handleSettingSubmit}>
-            <label className="block mb-2 text-sm font-medium text-gray-500">{t('Name')}:</label>
-    
-            <input type="text"
-               value={name}
-               className="w-full px-4 py-2 mb-4 border border-blue-100 rounded focus:outline-blue-500 text-gray-500 font-medium"
-               onChange={(e) => setName(e.target.value)}
-            />
+                            <button
+                                type="button"
+                                onClick={() => setShowSettingModal(false)}
+                                className="w-9 h-9 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-red-500 transition"
+                            >
+                                <FaTimes />
+                            </button>
+                        </div>
 
-            <label className="block mb-2 text-sm font-medium text-gray-500">{t('Phone')}:</label>
-            <input type="text"
-              value={phone} 
-              className="w-full px-4 py-2 mb-2 border rounded  border-blue-100  focus:outline-blue-500 text-gray-500 font-medium"
-              onChange={(e) => setPhone(e.target.value)}
-            />
+                        <form onSubmit={handleSettingSubmit} className="p-6">
+                            <div className="mb-4">
+                                <label className="block mb-2 text-xs font-semibold text-slate-600">
+                                    {t("Name")}
+                                </label>
+                                <input
+                                    type="text"
+                                    value={name}
+                                    onChange={(e) => setName(e.target.value)}
+                                    className="w-full px-4 py-3 border border-slate-200 rounded-xl outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 text-sm transition"
+                                />
+                            </div>
 
-            <label className="block mb-2 text-sm font-medium text-gray-500">{t('OldPassword')}:</label>
-            <input type="password"
-              placeholder="Type an old password"
-              className="w-full px-4 py-2 mb-2 border rounded  border-blue-100 focus:outline-blue-500 text-gray-500 font-medium"
-              onChange={(e) => setOldPassword(e.target.value)}
-            />
+                            <div className="mb-4">
+                                <label className="block mb-2 text-xs font-semibold text-slate-600">
+                                    {t("Phone")}
+                                </label>
+                                <input
+                                    type="text"
+                                    value={phone}
+                                    onChange={(e) => setPhone(e.target.value)}
+                                    className="w-full px-4 py-3 border border-slate-200 rounded-xl outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 text-sm transition"
+                                />
+                            </div>
 
-            <label className="block mb-2 text-sm font-medium text-gray-500">{t('NewPassword')}:</label>
-            <input type="password"
-              className="w-full px-4 py-2 mb-2 border rounded  border-blue-100 focus:outline-blue-500 text-gray-500 font-medium"
-              onChange={(e) => setNewPassword(e.target.value)}
-              placeholder="Type a new password"
-            />
+                            <div className="mb-4">
+                                <label className="block mb-2 text-xs font-semibold text-slate-600">
+                                    {t("OldPassword")}
+                                </label>
+                                <input
+                                    type="password"
+                                    value={oldPassword}
+                                    onChange={(e) => setOldPassword(e.target.value)}
+                                    placeholder="Enter your current password"
+                                    className="w-full px-4 py-3 border border-slate-200 rounded-xl outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 text-sm transition"
+                                />
+                            </div>
 
-            <button
-             type="sumbit"
-             className="bg-gradient-to-l from-blue-500 to-blue-300 via-purple-500 hover:scale-105 text-white px-3 py-2 rounded transition duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed"
-               disabled={((!name && !phone && !newPassword))}
-            >
-                {t('Save')}
-        </button>
-        </form>
-        {message && (
-            <p className="mt-3 text-sm text-center text-blue-600">{message}</p>
-        )}
-    </div>
-  </div>
-)}
+                            <div className="mb-5">
+                                <label className="block mb-2 text-xs font-semibold text-slate-600">
+                                    {t("NewPassword")}
+                                </label>
+                                <input
+                                    type="password"
+                                    value={newPassword}
+                                    onChange={(e) => setNewPassword(e.target.value)}
+                                    placeholder="Enter a new password"
+                                    className="w-full px-4 py-3 border border-slate-200 rounded-xl outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 text-sm transition"
+                                />
+                            </div>
 
+                            <button
+                                type="submit"
+                                disabled={isSettingsSaving || (!name && !phone && !newPassword)}
+                                className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white px-4 py-3 rounded-xl text-sm font-semibold transition"
+                            >
+                                {isSettingsSaving ? (
+                                    <>
+                                        <FiLoader className="animate-spin" />
+                                        Saving...
+                                    </>
+                                ) : (
+                                    <>
+                                        <FiCheck />
+                                        {t("Save")}
+                                    </>
+                                )}
+                            </button>
 
-{showFullProfile && (
-    <div
-     className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
-        <div className="p-4 rounded-lg relative">
-            <button
-             className="absolute top-4 right-4 text-gray-400 hover:text-red-500"
-             onClick={() => setShowFullProfile(false)}
-            >
-                <FaTimes size={18}/>
-            </button>
+                            {message && (
+                                <p className="mt-4 text-sm text-center text-indigo-600">
+                                    {message}
+                                </p>
+                            )}
+                        </form>
+                    </div>
+                </div>
+            )}
 
-            {user.profile_image ? (
-                <img src={`http://localhost:4000/uploads/${user.profile_image}`} alt="Full Profile" 
-                  className="w-80 h-auto object-cover border"
-               />
-            ) : (
-                <p>{t('NoProfileImageFound')}</p>
+            {showFullProfile && (
+                <div
+                    className="fixed inset-0 z-[100] bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-4"
+                    onClick={() => setShowFullProfile(false)}
+                >
+                    <div
+                        className="relative bg-white rounded-2xl p-3 shadow-2xl max-w-md w-full"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <button
+                            type="button"
+                            className="absolute top-5 right-5 z-10 w-9 h-9 bg-white/90 rounded-full flex items-center justify-center text-slate-600 hover:text-red-500 shadow transition"
+                            onClick={() => setShowFullProfile(false)}
+                        >
+                            <FaTimes size={17} />
+                        </button>
 
+                        {profileImage || user.profile_image ? (
+                            <img
+                                src={profileImage || getImageUrl(user.profile_image)}
+                                alt="Full Profile"
+                                className="w-full max-h-[75vh] object-contain rounded-xl"
+                            />
+                        ) : (
+                            <div className="py-16 text-center">
+                                <FiUser className="mx-auto text-4xl text-slate-300 mb-3" />
+                                <p className="text-sm text-slate-500">
+                                    {t("NoProfileImageFound")}
+                                </p>
+                            </div>
+                        )}
+                    </div>
+                </div>
             )}
         </div>
-     </div>
-)}
-
-
-</div>
-    )
+    );
 }
