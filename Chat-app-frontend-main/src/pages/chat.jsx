@@ -1182,7 +1182,6 @@ export default function Chat() {
                         </section>
                     )}
 
-                    {/* CONTACTS */}
                     {(activeTab === "all" || activeTab === "people") && (
                         <section>
                             <div className="px-5 py-3 flex items-center justify-between bg-white sticky top-0 z-10 border-t border-slate-100">
@@ -1295,7 +1294,6 @@ export default function Chat() {
 
                 </div>
 
-                {/* Sidebar footer */}
                 <div className="px-5 py-3 border-t border-slate-200 bg-white">
                     <p className="text-[11px] text-slate-400">
                         School Chat · Your school community
@@ -1303,19 +1301,13 @@ export default function Chat() {
                 </div>
             </aside>
 
-            {/* ==========================================
-                RIGHT CHAT AREA
-            ========================================== */}
-
             <main className={`
                 flex-1 min-w-0 flex flex-col bg-white
                 ${showMobileChat ? "flex" : "hidden md:flex"}
             `}>
 
-                {/* SELECTED CONVERSATION */}
                 {selectedUser || selectedGroup ? (
                     <>
-                        {/* Chat header */}
                         <header className="h-[76px] shrink-0 px-4 sm:px-6 flex items-center justify-between border-b border-slate-200 bg-white">
 
                             <div className="flex items-center gap-3 min-w-0">
@@ -1359,7 +1351,6 @@ export default function Chat() {
                                 </div>
                             </div>
 
-                            {/* Header actions */}
                             <div className="flex items-center gap-2">
 
                                 {selectedGroup && (
@@ -1429,7 +1420,6 @@ export default function Chat() {
                             </div>
                         </header>
 
-                        {/* Messages */}
                         <section
                             ref={messagesContainerRef}
                             className="flex-1 overflow-y-auto bg-slate-50/70 px-3 sm:px-6 py-6"
@@ -1486,7 +1476,6 @@ export default function Chat() {
                                                         own ? "items-end" : "items-start"
                                                     }`}>
 
-                                                        {/* Sender name */}
                                                         {!own && selectedGroup && (
                                                             <p className="text-[11px] font-semibold text-slate-500 mb-1 ml-2">
                                                                 {msg.sender_name}
@@ -1556,7 +1545,6 @@ export default function Chat() {
                             </div>
                         </section>
 
-                        {/* Error notice */}
                         {errorMessage && !isLoadingMessages && (
                             <div className="px-5 py-2 bg-red-50 border-t border-red-100">
                                 <p className="text-xs text-red-600">
@@ -1565,7 +1553,6 @@ export default function Chat() {
                             </div>
                         )}
 
-                        {/* Message composer */}
                         <footer className="shrink-0 bg-white border-t border-slate-200 p-3 sm:p-4">
 
                             <form
@@ -1614,10 +1601,6 @@ export default function Chat() {
                         </footer>
                     </>
                 ) : (
-
-                    /* ==================================
-                       EMPTY CHAT STATE
-                    ================================== */
 
                     <div className="flex-1 flex flex-col items-center justify-center bg-white px-6 text-center">
 
