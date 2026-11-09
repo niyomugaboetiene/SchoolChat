@@ -10,13 +10,13 @@ router.get('/me', async (req, res) => {
     if (!userId) return res.status(401).json({ message: 'Unauthorized' });
 
     try {
-        const [rows] = await pool.query('SELECT name, phone FROM user WHERE user_id = ?', [userId]);
+        const [rows] = await pool.query('SELECT name, phone FROM `user` WHERE user_id = ?', [userId]);
         if (rows.length === 0) return res.status(404).json({ message: 'User not found' });
 
         res.json(rows[0]);
 
     } catch (err) {
-        console.error(err);
+        // console.error(err);
         res.status(500).json({ message: 'Server error' });
     }
 });
@@ -31,7 +31,7 @@ router.post('/update', async (req, res) => {
     if (!userId) return res.status(401).json({ message: 'Unauthorized' });
 
     try {
-        const [userRows] = await pool.query('SELECT password FROM user WHERE user_id = ?', [userId]);
+        const [userRows] = await pool.query('SELECT password FROM `user` WHERE user_id = ?', [userId]);
         if (userRows.length === 0) return res.send(404).json({ message: 'User not found' });
 
 
@@ -76,7 +76,7 @@ router.post('/update', async (req, res) => {
 
         res.json({ message: 'Settings updated successfully' });
     } catch (error) {
-        console.error(error);
+        // console.error(error);
         res.status(500).json({ message: 'Update failed' });
     }
 })

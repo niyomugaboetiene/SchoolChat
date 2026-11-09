@@ -28,11 +28,11 @@ const upload = multer({ storage });
  router.post("/change-profile-photo", isLoggedIn, upload.single("profile_image"), async (req, res) => {
 try {
   
-    const [users] = await db.query('SELECT * FROM user WHERE user_id != ?', [req.session.user.id]);
+    const [users] = await db.query('SELECT * FROM `user` WHERE user_id != ?', [req.session.user.id]);
 
     if (!req.file) return res.status(400).json({ error: "No file uploaded" });
 
-    const sql = "UPDATE user SET profile_image = ? WHERE user_id = ?";
+    const sql = "UPDATE `user` SET profile_image = ? WHERE user_id = ?";
 
     db.query(sql, [req.file.filename, req.session.user.id]);
       
@@ -71,7 +71,7 @@ router.get('/', getAllUsers);
 // Add this to your userRoutes.js
 router.get('/', async (req, res) => {
     try {
-        const query = "SELECT user_id, name FROM user";
+        const query = "SELECT user_id, name FROM `user`";
         pool.query(query, (err, results) => {
             if (err) return res.status(500).json({ error: 'Database error' });
             res.json(results);
@@ -85,14 +85,14 @@ router.get('/:user_id', async (req, res) => {
     const userId = req.params.user_id;
 
     try {
-        const [rows] = await db.query('SELECT user_id, name, profile_image, created_at, role, phone FROM user WHERE user_id = ?', [userId]);
+        const [rows] = await db.query('SELECT user_id, name, profile_image, created_at, role, phone FROM `user` WHERE user_id = ?', [userId]);
 
         if (rows.length === 0) {
             return res.status(404).json({ message: 'User not found' });
         }
         res.json(rows[0]);
     } catch (error) {
-        console.error('User fetch error:', error);
+        // console.error('User fetch error:', error);
         res.status(500).json({ message: 'Server error' });
     }
 })

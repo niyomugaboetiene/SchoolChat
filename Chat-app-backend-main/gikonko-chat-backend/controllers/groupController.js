@@ -24,7 +24,7 @@ export async function createGroup(req, res) {
 
         //fetch id of group creator to insert him/ her in database
         const [[creatorRow]] = await conn.query(
-            'SELECT user_id FROM user WHERE name = ?',
+            'SELECT user_id FROM `user` WHERE name = ?',
             [created_by]
         )
         if (!creatorRow) throw new Error(`Creator not found ${created_by}`)
@@ -32,7 +32,7 @@ export async function createGroup(req, res) {
             const creator_id = creatorRow.user_id;
 
             await conn.query(
-                'INSERT INTO group_members (g_id, user_id, joined_at) VALUES(?, ?, NOW())',
+                'INSERT INTO `group_members` (g_id, user_id, joined_at) VALUES(?, ?, NOW())',
                 [g_id, creator_id]
             )
 
@@ -41,7 +41,7 @@ export async function createGroup(req, res) {
         for (const username of members) {
             // loop through each username in members
             const [[userRow]] = await conn.query(
-                'SELECT user_id FROM user WHERE name = ?',
+                'SELECT user_id FROM `user` WHERE name = ?',
                 [username]
             );
 
@@ -50,7 +50,7 @@ export async function createGroup(req, res) {
             if (userRow.user_id !== creator_id) { // avoid duplicated insert
 
                await conn.query(
-                   'INSERT INTO group_members (g_id, user_id, joined_at) VALUES(?, ?, NOW())',
+                   'INSERT INTO `group_members` (g_id, user_id, joined_at) VALUES(?, ?, NOW())',
                    [g_id, userRow.user_id]
             )
         }
@@ -95,7 +95,7 @@ const [groups] = await db.query(
  
         res.json(groups);
       } catch (err) {
-        console.error('Error fetching user groups', err);
+        // console.error('Error fetching user groups', err);
         res.status(500).json({ message: 'Failed to fetch groups' })
       }
 }
@@ -139,7 +139,7 @@ export async function getGroupMessages(req, res) {
         
         res.json(messages);
     } catch (err) {
-        console.error('Error fetching group messages:', err);
+        // console.error('Error fetching group messages:', err);
         res.status(500).json({ message: 'Failed to fetch group messages' });
     }
 }
@@ -200,7 +200,7 @@ export async function sendGroupMessage(req, res) {
         res.status(201).json(message);
     } catch (err) {
         await conn.rollback();
-        console.error('Error sending group message', err);
+        // console.error('Error sending group message', err);
         res.status(500).json({ message: 'Failed to send message' });
     } finally {
         conn.release();

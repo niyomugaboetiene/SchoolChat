@@ -24,6 +24,6 @@ export const getCurrentUser = (req, res) => {
 
 export const getGroupInfo = async (req, res) => {
    const { g_id } = req.params;
-   const [[group]] = await pool.query("SELECT * FROM groups WHERE g_id = ?", [g_id]);
+   const [[group]] = await pool.query("SELECT * FROM `groups` WHERE g_id = ?", [g_id]);
    res.json(group); 
 }

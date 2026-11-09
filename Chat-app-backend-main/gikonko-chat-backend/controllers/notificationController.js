@@ -15,7 +15,7 @@ export const sendNotification = async ({ receiver_id, sender_id, type, content }
 
         const created_at = new Date();
         const [result] = await db.query(
-            'INSERT INTO notifications (receiver_id, sender_id, type, content) VALUES(?, ?, ?, ?)',
+            'INSERT INTO `notifications` (receiver_id, sender_id, type, content) VALUES(?, ?, ?, ?)',
             [receiver_id, sender_id, type, content]
         );
 
@@ -38,9 +38,7 @@ export const sendNotification = async ({ receiver_id, sender_id, type, content }
         }
 
     } catch (error) {
-        console.error('Error creating notification:', error);
+        // console.error('Error creating notification:', error);
         res.status(500).json({ error: 'Failed to create notification' });
     }
-    
-
 }
