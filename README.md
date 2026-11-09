@@ -300,7 +300,7 @@ Potential improvements for future versions include:
 ## Developer
 
 <p align="center">
-  <img src="screenshots/etiene.jpg" alt="NIYOMUGABO Etiene" width="180"/>
+  <img src="screenshots/etiene.JPG" alt="NIYOMUGABO Etiene" width="180"/>
 </p>
 
 <h3 align="center">NIYOMUGABO Etiene</h3>
