@@ -324,7 +324,7 @@ This project is intended for educational and personal development purposes. Plea
 ---
 
 <p align="center">
-  **Built with dedication by NIYOMUGABO Etiene.**
+  Built with dedication by NIYOMUGABO Etiene.
 </p>
 
 <p align="center">
