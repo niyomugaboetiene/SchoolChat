@@ -19,6 +19,7 @@ import {
     FaTimes,
     FaGlobe
 } from "react-icons/fa";
+import {FiMessageCircle} from "react-icons/fi"
 
 import api from "../api";
 import { useTranslation } from "react-i18next";
@@ -358,7 +359,7 @@ export default function Layout() {
                         className="flex items-center gap-3 shrink-0"
                     >
                         <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-sm">
-                            <FaEnvelope className="text-lg" />
+                            <FiMessageCircle className="text-lg" />
                         </div>
 
                         <div className="hidden sm:block">
