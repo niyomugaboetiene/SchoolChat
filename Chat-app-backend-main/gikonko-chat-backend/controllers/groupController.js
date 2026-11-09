@@ -113,7 +113,7 @@ export async function getGroupMessages(req, res) {
         // Verify group membership
         const [membership] = await db.query(
             // SELECT 1 means to check if there is any matching rows not any name, or id only matching row
-            'SELECT 1 FROM group_members WHERE g_id = ? AND user_id = ?',
+            'SELECT 1 FROM `group_members` WHERE g_id = ? AND user_id = ?',
             [g_id, user_id]
         );
         
@@ -165,7 +165,7 @@ export async function sendGroupMessage(req, res) {
 
         // Verify membership
         const [[isMember]] = await conn.query(
-            'SELECT 1 FROM group_members WHERE g_id = ? AND user_id = ?',
+            'SELECT 1 FROM `group_members` WHERE g_id = ? AND user_id = ?',
             [g_id, user_id]
         );
         
@@ -176,7 +176,7 @@ export async function sendGroupMessage(req, res) {
 
         // Insert message
         const [result] = await conn.query(
-            'INSERT INTO group_messages (g_id, user_id, type, content, created_at) VALUES(?, ?, ?, ?, NOW())',
+            'INSERT INTO `group_messages` (g_id, user_id, type, content, created_at) VALUES(?, ?, ?, ?, NOW())',
             [g_id, user_id, type, content]
         );
 
