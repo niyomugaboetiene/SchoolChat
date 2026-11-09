@@ -24,20 +24,35 @@ export default function Login() {
     const navigate = useNavigate();
     const { t } = useTranslation();
 
-    async function handleSubmit(e) {
-        e.preventDefault();
-        setError(null);
-        setLoading(true);
 
-        try {
-            await api.post("/api/auth/login", { phone, password });
-            navigate("/dashboard");
-        } catch (err) {
-            setError(err.response?.data?.message || "Login Failed");
-        } finally {
-            setLoading(false);
+        async function handleSubmit(e) {
+            e.preventDefault();
+            setError(null);
+            setLoading(true);
+
+            try {
+                const response = await api.post("/api/auth/login", {
+                    phone,
+                    password
+                });
+
+                const token =
+                    response.data.token ||
+                    response.data.accessToken ||
+                    response.data.access_token;
+
+                if (token) {
+                    localStorage.setItem("token", token);
+                }
+
+                navigate("/dashboard");
+            } catch (err) {
+                setError(err.response?.data?.message || "Login Failed");
+            } finally {
+                setLoading(false);
+            }
         }
-    }
+
 
     return (
         <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-10">
