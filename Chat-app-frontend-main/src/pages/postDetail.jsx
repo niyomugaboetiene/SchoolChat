@@ -116,7 +116,7 @@ export default function PostDetail() {
                         <div className="flex items-center gap-3">
                             {post.profile_image ? (
                                 <img
-                                    src={`http://localhost:4000/uploads/${post.profile_image}`}
+                                    src={`${import.meta.env.VITE_BACKEND_URL}/uploads/${post.profile_image}`}
                                     alt={post.author_name || "Author"}
                                     className="h-12 w-12 rounded-full border border-slate-200 object-cover"
                                 />
@@ -160,7 +160,7 @@ export default function PostDetail() {
                         {post.image && (
                             <div className="overflow-hidden rounded-xl border border-slate-100 bg-slate-50">
                                 <img
-                                    src={`http://localhost:4000/uploads/${post.image}`}
+                                    src={`${import.meta.env.VITE_BACKEND_URL}/uploads/${post.image}`}
                                     alt="Post"
                                     className="mx-auto max-h-[650px] w-full object-contain"
                                 />

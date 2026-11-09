@@ -121,7 +121,7 @@ export default function UserDetail() {
                     <div className="flex justify-center">
                         {user.profile_image ? (
                             <img
-                                src={`http://localhost:4000/uploads/${user.profile_image}`}
+                                src={`${import.meta.env.VITE_BACKEND_URL}/uploads/${user.profile_image}`}
                                 alt={user.name || "User"}
                                 className="h-32 w-32 rounded-full border-4 border-white object-cover shadow-md ring-1 ring-slate-200"
                             />

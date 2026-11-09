@@ -254,7 +254,7 @@ export default function Notification() {
                                     <div className="relative shrink-0">
                                         {n.sender_profile_image ? (
                                             <img
-                                                src={`http://localhost:4000/uploads/${n.sender_profile_image}`}
+                                                src={`${import.meta.env.VITE_BACKEND_URL}/uploads/${n.sender_profile_image}`}
                                                 alt={n.sender_name || "User"}
                                                 className="h-12 w-12 rounded-full border border-slate-200 object-cover"
                                             />
